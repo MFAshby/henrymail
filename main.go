@@ -1,27 +1,27 @@
 package main
 
 import (
-	"database/sql"
-	_ "github.com/mattn/go-sqlite3"
-	"github.com/spf13/viper"
-	"log"
+	ev "github.com/asaskevich/EventBus"
 )
 
-const SqlitePathKey = "DB_PATH"
-
-func SetDefaults() {
-	viper.SetDefault(SqlitePathKey, "henrymail.db")
-}
-
 func main() {
-	SetDefaults()
+	SetConfigDefaults()
 
-	db, err := sql.Open("sqlite3", viper.GetString(SqlitePathKey))
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = db.Close()
-	if err != nil {
-		log.Fatal(err)
-	}
+	database := NewDatabase()
+	login := NewLogin(database)
+
+	// Bus for posting async stuff
+	bus := ev.New()
+
+	// Log everything that is posted to the bus
+	StartEventLogger(bus)
+
+	// Various user facing services
+	StartMsa(bus, login)
+	// StartMta()
+	// StartImap()
+	StartWebAdmin(bus, login)
+
+	// Wait for exit
+	select {}
 }
