@@ -19,8 +19,8 @@ type wa struct {
 
 // ViewModels, defining the data how it is displayed
 type IndexViewModel struct {
-	CurrentUser *User
-	Users       []*User
+	CurrentUser *Usr
+	Users       []*Usr
 }
 
 type LoginViewModel struct {
@@ -37,7 +37,7 @@ var someSecret = []byte("Some secret yo")
 
 const authCookieName = "jwt_auth"
 
-type AuthenticatedHandler = func(w http.ResponseWriter, r *http.Request, u *User)
+type AuthenticatedHandler = func(w http.ResponseWriter, r *http.Request, u *Usr)
 
 func (wa *wa) renderLogin(w http.ResponseWriter, errorMessage string) {
 	if err := wa.tp.ExecuteTemplate(w, "login.html", LoginViewModel{
@@ -47,7 +47,7 @@ func (wa *wa) renderLogin(w http.ResponseWriter, errorMessage string) {
 	}
 }
 
-func (wa *wa) renderRoot(w http.ResponseWriter, u *User, users []*User) {
+func (wa *wa) renderRoot(w http.ResponseWriter, u *Usr, users []*Usr) {
 	if err := wa.tp.ExecuteTemplate(w, "index.html", IndexViewModel{
 		CurrentUser: u,
 		Users:       users,
@@ -65,7 +65,7 @@ func (wa *wa) renderError(w http.ResponseWriter, err string) {
 	}
 }
 
-func (wa *wa) rootGet(w http.ResponseWriter, r *http.Request, u *User) {
+func (wa *wa) rootGet(w http.ResponseWriter, r *http.Request, u *Usr) {
 	users, e := wa.db.GetUsers()
 	if e != nil {
 		wa.renderError(w, e.Error())
@@ -74,7 +74,7 @@ func (wa *wa) rootGet(w http.ResponseWriter, r *http.Request, u *User) {
 	wa.renderRoot(w, u, users)
 }
 
-func (wa *wa) delete(w http.ResponseWriter, r *http.Request, u *User) {
+func (wa *wa) delete(w http.ResponseWriter, r *http.Request, u *Usr) {
 	email := r.FormValue("email")
 	if email == u.Email {
 		wa.renderError(w, "You cannot delete yourself")
@@ -88,7 +88,7 @@ func (wa *wa) delete(w http.ResponseWriter, r *http.Request, u *User) {
 	}
 }
 
-func (wa *wa) add(w http.ResponseWriter, r *http.Request, u *User) {
+func (wa *wa) add(w http.ResponseWriter, r *http.Request, u *Usr) {
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 	_, err := wa.lg.NewUser(email, password)
@@ -165,7 +165,7 @@ func checkAuth(next AuthenticatedHandler) http.Handler {
 		if !ok {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 		}
-		user := &User{Email: email}
+		user := &Usr{Email: email}
 		next(w, r, user)
 	})
 }
@@ -191,7 +191,7 @@ func StartWebAdmin(bus ev.Bus, lg Login, db Database) {
 
 	go func() {
 		addr := GetString(WebAdminAddressKey)
-		println("Started admin web server at ", addr)
+		log.Println("Started admin web server at ", addr)
 		if err := http.ListenAndServe(addr, mux); err != nil {
 			log.Fatal(err)
 		}

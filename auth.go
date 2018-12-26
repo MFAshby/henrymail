@@ -5,12 +5,8 @@ import (
 )
 
 type Login interface {
-	Login(email, password string) (*User, error)
-	NewUser(email, password string) (*User, error)
-}
-
-type User struct {
-	Email string
+	Login(email, password string) (*Usr, error)
+	NewUser(email, password string) (*Usr, error)
 }
 
 type dbLogin struct {
@@ -18,13 +14,10 @@ type dbLogin struct {
 }
 
 func NewLogin(db Database) Login {
-	login := &dbLogin{db: db}
-	_, _ = login.NewUser("martin@test.com", "12345")
-	_, _ = login.NewUser("someone@test.com", "12345")
-	return login
+	return &dbLogin{db: db}
 }
 
-func (db dbLogin) Login(email, password string) (*User, error) {
+func (db dbLogin) Login(email, password string) (*Usr, error) {
 	user, passwordBytes, e := db.db.GetUserAndPassword(email)
 	if e != nil {
 		return nil, e
@@ -36,14 +29,14 @@ func (db dbLogin) Login(email, password string) (*User, error) {
 	return user, nil
 }
 
-func (db dbLogin) NewUser(email, password string) (*User, error) {
+func (db dbLogin) NewUser(email, password string) (*Usr, error) {
 	passwordBytes, e := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if e != nil {
 		return nil, e
 	}
-	e = db.db.InsertUser(email, passwordBytes)
+	usr, e := db.db.InsertUser(email, passwordBytes)
 	if e != nil {
 		return nil, e
 	}
-	return &User{Email: email}, nil
+	return usr, nil
 }

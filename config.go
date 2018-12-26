@@ -5,6 +5,8 @@ import "github.com/spf13/viper"
 const (
 	SqlitePathKey        = "DB_PATH"
 	MsaAddressKey        = "MSA_ADDRESS"
+	MtaAddressKey        = "MTA_ADDRESS"
+	ImapAddressKey       = "IMAP_ADDRESS"
 	DomainKey            = "DOMAIN"
 	MaxIdleSecondsKey    = "MAX_IDLE_SECONDS"
 	MaxMessageBytesKey   = "MAX_MESSAGE_BYTES"
@@ -16,6 +18,8 @@ const (
 func SetConfigDefaults() {
 	viper.SetDefault(SqlitePathKey, "henrymail.db")
 	viper.SetDefault(MsaAddressKey, ":1587")
+	viper.SetDefault(MtaAddressKey, ":1025")
+	viper.SetDefault(ImapAddressKey, ":1143")
 	viper.SetDefault(WebAdminAddressKey, ":1080")
 	viper.SetDefault(DomainKey, "localhost")
 	viper.SetDefault(MaxIdleSecondsKey, 300)

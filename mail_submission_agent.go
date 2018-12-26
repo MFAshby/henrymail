@@ -9,7 +9,7 @@ import (
 )
 
 /**
- * Accepts new mail for sending
+ * Accepts new mail from users for sending
  */
 func StartMsa(bus ev.Bus, lg Login) {
 	be := &be{
@@ -53,7 +53,7 @@ func (bkd *be) AnonymousLogin() (smtp.User, error) {
 
 type us struct {
 	bus ev.Bus
-	u   *User
+	u   *Usr
 }
 
 func (u us) Send(from string, to []string, r io.Reader) error {

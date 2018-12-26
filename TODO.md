@@ -28,3 +28,5 @@ Additional really useful features
 * Antivirus https://github.com/dutchcoders/go-clamd
 * DoS / brute force protection
 * Probably read https://blog.cloudflare.com/exposing-go-on-the-internet/
+* CSRF protection
+* SQLite concurrency control
