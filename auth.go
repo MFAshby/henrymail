@@ -1,28 +1,49 @@
 package main
 
 import (
-	"errors"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Login interface {
-	Login(username string, password string) (*User, error)
+	Login(email, password string) (*User, error)
+	NewUser(email, password string) (*User, error)
 }
 
 type User struct {
-	username string
+	Email string
 }
 
-// Implementation, should be in a different file I guess
+type dbLogin struct {
+	db Database
+}
+
 func NewLogin(db Database) Login {
-	return &dbLogin{}
+	login := &dbLogin{db: db}
+	_, _ = login.NewUser("martin@test.com", "12345")
+	_, _ = login.NewUser("someone@test.com", "12345")
+	return login
 }
 
-type dbLogin struct{}
-
-func (dbLogin) Login(username, password string) (*User, error) {
-	// TODO fetch the details off the database!
-	if username != "username" || password != "password" {
-		return nil, errors.New("Invalid username or password")
+func (db dbLogin) Login(email, password string) (*User, error) {
+	user, passwordBytes, e := db.db.GetUserAndPassword(email)
+	if e != nil {
+		return nil, e
 	}
-	return &User{username: username}, nil
+	e = bcrypt.CompareHashAndPassword(passwordBytes, []byte(password))
+	if e != nil {
+		return nil, e
+	}
+	return user, nil
+}
+
+func (db dbLogin) NewUser(email, password string) (*User, error) {
+	passwordBytes, e := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if e != nil {
+		return nil, e
+	}
+	e = db.db.InsertUser(email, passwordBytes)
+	if e != nil {
+		return nil, e
+	}
+	return &User{Email: email}, nil
 }

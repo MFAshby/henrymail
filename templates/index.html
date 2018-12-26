@@ -1,14 +1,56 @@
 <!doctype HTML>
 <html>
-<head>
+    <head>
+        <title>Henrymail</title>
+    </head>
+    <body>
+        <div>
+            <h1>Admin interface for {{ .CurrentUser.Email }}</h1>
+            <form action="/logout">
+                <input type="submit" value="Log out">
+            </form>
+        </div>
 
-</head>
-<body>
-<form>
-    <h1>Admin interface for {{ .UserName }}</h1>
-    <form>
+        <div>
+            <h2>Current users</h2>
+            <table>
+                <thead>
+                    <td>Email</td>
+                    <td>Delete</td>
+                </thead>
+                <tbody>
+                    {{ range .Users }}
+                    <tr>
+                        <td>{{.Email}}</td>
+                        <td>
+                            <form action="/deleteUser">
+                                <input type="hidden" name="email" value="{{.Email}}">
+                                {{ if eq .Email $.CurrentUser.Email}}
+                                    <input disabled type="submit" value="Delete">
+                                {{ else }}
+                                    <input type="submit" value="Delete" placeholder="You cannot delete yourself">
+                                {{ end }}
+                            </form>
+                        </td>
+                    </tr>
+                    {{ end }}
+                </tbody>
+            </table>
+        </div>
 
-    </form>
-</form>
-</body>
+        <div>
+            <h2>Add a new user</h2>
+            <form action="/addUser">
+                <label>
+                    Email
+                    <input name="email" type="email">
+                </label>
+                <label>
+                    Password
+                    <input name="password" type="password">
+                </label>
+                <input type="submit" value="Add user">
+            </form>
+        </div>
+    </body>
 </html>

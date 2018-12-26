@@ -20,7 +20,7 @@ func main() {
 	StartMsa(bus, login)
 	// StartMta()
 	// StartImap()
-	StartWebAdmin(bus, login)
+	StartWebAdmin(bus, login, database)
 
 	// Wait for exit
 	select {}

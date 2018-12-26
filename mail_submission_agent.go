@@ -8,6 +8,9 @@ import (
 	"log"
 )
 
+/**
+ * Accepts new mail for sending
+ */
 func StartMsa(bus ev.Bus, lg Login) {
 	be := &be{
 		bus: bus,
