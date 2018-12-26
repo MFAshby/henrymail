@@ -5,6 +5,7 @@ import (
 	"errors"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
+	"time"
 )
 
 // Need to control concurrency for write operations.
@@ -21,10 +22,41 @@ type Database interface {
 
 	InsertMessage(content []byte, flags []string, mbxId int64) (*Msg, error)
 	GetMessages(mbxId int64, lowerUid uint32) ([]*Msg, error)
+	GetInboxId(email string) (int64, error)
+	InsertQueue(from, to string, content []byte, timestamp time.Time) error
+	GetQueuedMsgs() ([]*QueuedMsg, error)
 }
 
 type sqliteDb struct {
 	db *sql.DB
+}
+
+func (db *sqliteDb) GetQueuedMsgs() ([]*QueuedMsg, error) {
+	panic("implement me")
+}
+
+func (db *sqliteDb) InsertQueue(from, to string, content []byte, timestamp time.Time) error {
+	_, e := db.db.Exec(`
+			INSERT INTO queue(msgfrom, msgto, timestamp, content)
+			VALUES (?, ?, ?, ?)
+		`, from, to, timestamp, content)
+	return e
+}
+
+var NotFound = errors.New("not found")
+
+func (db *sqliteDb) GetInboxId(email string) (int64, error) {
+	var ibxId int64
+	e := db.db.QueryRow(`
+		SELECT mbx.id 
+		FROM mailboxes mbx, users u 
+		WHERE mbx.userid = u.id
+		AND u.email = ? 
+	`, email).Scan(&ibxId)
+	if e == sql.ErrNoRows {
+		e = NotFound
+	}
+	return ibxId, e
 }
 
 func (db *sqliteDb) GetMessages(mbxId int64, lowerUid uint32) ([]*Msg, error) {
@@ -134,6 +166,9 @@ func (db *sqliteDb) GetMailbox(name string, usrId int64) (*Mbx, error) {
 	row := db.db.QueryRow(`SELECT id, userid, name, uidnext, uidvalidity from mailboxes where userid = ? and name = ?`, usrId, name)
 	mbx := &Mbx{}
 	e := row.Scan(&mbx.Id, &mbx.UserId, &mbx.Name, &mbx.UidNext, &mbx.UidValidity)
+	if e == sql.ErrNoRows {
+		return nil, NotFound
+	}
 	if e != nil {
 		return nil, e
 	}
@@ -208,6 +243,9 @@ func (db *sqliteDb) GetUserAndPassword(email string) (*Usr, []byte, error) {
 	var pw []byte
 	e := row.Scan(&u.Id, &u.Email, &pw)
 	if e == sql.ErrNoRows {
+		return nil, nil, NotFound
+	}
+	if e == sql.ErrNoRows {
 		return nil, nil, errors.New("user not found")
 	}
 	if e != nil {
@@ -242,6 +280,7 @@ func NewDatabase() Database {
 		DROP TABLE IF EXISTS mailboxes;
 		DROP TABLE IF EXISTS messages;
 		DROP TABLE IF EXISTS messageflags;
+		DROP TABLE IF EXISTS queue;
 			
 		CREATE TABLE IF NOT EXISTS users (
 			id integer primary key,
@@ -271,6 +310,14 @@ func NewDatabase() Database {
 			messageid integer,
 			flag text,
 			FOREIGN KEY (messageid) REFERENCES messages(id)
+		);
+		CREATE TABLE IF NOT EXISTS queue (
+		  	id integer primary key,
+		  	msgfrom text,
+		  	msgto text,
+		  	timestamp integer,
+		  	retries integer default 0,
+		  	content blob                             
 		);
 	`
 	_, err = db.Exec(initSql)

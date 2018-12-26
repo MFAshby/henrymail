@@ -1,5 +1,28 @@
 package main
 
+import (
+	"time"
+)
+
+type MsgProcessor interface {
+	Process(*Wrap) error
+}
+
+type Wrap struct {
+	From      string
+	To        []string
+	Content   []byte
+	Timestamp time.Time
+}
+
+type QueuedMsg struct {
+	From      string
+	To        string
+	Content   []byte
+	Timestamp time.Time
+	retries   uint32
+}
+
 type Usr struct {
 	Id    int64
 	Email string

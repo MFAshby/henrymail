@@ -1,20 +1,21 @@
 package main
 
 import (
-	ev "github.com/asaskevich/EventBus"
+	"bytes"
 	"github.com/emersion/go-message"
 	"github.com/emersion/go-smtp"
 	"io"
+	"io/ioutil"
 	"log"
 )
 
 /**
- * Accepts new mail from users for sending
+ * Accepts new mail from our own users for sending
  */
-func StartMsa(bus ev.Bus, lg Login) {
-	be := &be{
-		bus: bus,
-		lg:  lg,
+func StartMsa(proc MsgProcessor, lg Login) {
+	be := &sbe{
+		proc: proc,
+		lg:   lg,
 	}
 	s := smtp.NewServer(be)
 	s.Addr = GetString(MsaAddressKey)
@@ -31,40 +32,51 @@ func StartMsa(bus ev.Bus, lg Login) {
 	}()
 }
 
-type be struct {
-	bus ev.Bus
-	lg  Login
+type sbe struct {
+	proc MsgProcessor
+	lg   Login
 }
 
-func (bkd *be) Login(username, password string) (smtp.User, error) {
-	user, e := bkd.lg.Login(username, password)
+func (b *sbe) Login(username, password string) (smtp.User, error) {
+	user, e := b.lg.Login(username, password)
 	if e != nil {
 		return nil, e
 	}
-	return &us{
-		bus: bkd.bus,
-		u:   user,
+	return &sus{
+		proc: b.proc,
+		u:    user,
 	}, nil
 }
 
-func (bkd *be) AnonymousLogin() (smtp.User, error) {
+func (b *sbe) AnonymousLogin() (smtp.User, error) {
 	return nil, smtp.ErrAuthRequired
 }
 
-type us struct {
-	bus ev.Bus
-	u   *Usr
+type sus struct {
+	proc MsgProcessor
+	u    *Usr
 }
 
-func (u us) Send(from string, to []string, r io.Reader) error {
-	if msg, e := message.Read(r); e != nil {
+func (u *sus) Send(from string, to []string, r io.Reader) error {
+	content, e := ioutil.ReadAll(r)
+	// Check we can read all the content
+	if e != nil {
 		return e
-	} else {
-		u.bus.Publish(MailSubmitted, msg)
-		return nil
 	}
+
+	// Check we can parse it as a spec compliant message
+	if _, e := message.Read(bytes.NewBuffer(content)); e != nil {
+		return e
+	}
+
+	// Pass it on
+	return u.proc.Process(&Wrap{
+		From:    from,
+		To:      to,
+		Content: content,
+	})
 }
 
-func (us) Logout() error {
+func (*sus) Logout() error {
 	return nil
 }

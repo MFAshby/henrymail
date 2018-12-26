@@ -1,19 +1,20 @@
 package main
 
 import (
-	ev "github.com/asaskevich/EventBus"
+	"bytes"
 	"github.com/emersion/go-message"
 	"github.com/emersion/go-smtp"
 	"io"
+	"io/ioutil"
 	"log"
 )
 
 /**
  * Accepts new mail from other servers
  */
-func StartMta(bus ev.Bus) {
+func StartMta(proc MsgProcessor) {
 	b := &tbe{
-		bus: bus,
+		proc: proc,
 	}
 	s := smtp.NewServer(b)
 	s.Addr = GetString(MtaAddressKey)
@@ -31,8 +32,8 @@ func StartMta(bus ev.Bus) {
 }
 
 type tbe struct {
-	bus ev.Bus
-	lg  Login
+	proc MsgProcessor
+	lg   Login
 }
 
 func (b *tbe) Login(username, password string) (smtp.User, error) {
@@ -40,20 +41,32 @@ func (b *tbe) Login(username, password string) (smtp.User, error) {
 }
 
 func (b *tbe) AnonymousLogin() (smtp.User, error) {
-	return &tus{bus: b.bus}, nil
+	return &tus{proc: b.proc}, nil
 }
 
 type tus struct {
-	bus ev.Bus
+	proc MsgProcessor
 }
 
+// TODO fix code duplication here
 func (u *tus) Send(from string, to []string, r io.Reader) error {
-	if msg, e := message.Read(r); e != nil {
+	content, e := ioutil.ReadAll(r)
+	// Check we can read all the content
+	if e != nil {
 		return e
-	} else {
-		u.bus.Publish(MailSubmitted, msg)
-		return nil
 	}
+
+	// Check we can parse it as a spec compliant message
+	if _, e := message.Read(bytes.NewBuffer(content)); e != nil {
+		return e
+	}
+
+	// Pass it on
+	return u.proc.Process(&Wrap{
+		From:    from,
+		To:      to,
+		Content: content,
+	})
 }
 
 func (*tus) Logout() error {

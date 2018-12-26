@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	ev "github.com/asaskevich/EventBus"
 	"github.com/dgrijalva/jwt-go"
 	"html/template"
 	"log"
@@ -11,10 +10,9 @@ import (
 )
 
 type wa struct {
-	bus ev.Bus
-	lg  Login
-	tp  *template.Template
-	db  Database
+	lg Login
+	tp *template.Template
+	db Database
 }
 
 // ViewModels, defining the data how it is displayed
@@ -31,8 +29,8 @@ type ErrorViewModel struct {
 	Error string
 }
 
-// TODO this should be somewhere better than in the binary
-//  it should also be rotateable.
+// TODO this should sbe somewhere better than in the binary
+//  it should also sbe rotateable.
 var someSecret = []byte("Some secret yo")
 
 const authCookieName = "jwt_auth"
@@ -170,17 +168,17 @@ func checkAuth(next AuthenticatedHandler) http.Handler {
 	})
 }
 
-func StartWebAdmin(bus ev.Bus, lg Login, db Database) {
+func StartWebAdmin(lg Login, db Database) {
+	// TODO bundle these into the binary for release builds?
 	tp := template.Must(template.New("html").
 		ParseFiles("templates/index.html",
 			"templates/login.html",
 			"templates/error.html"))
 
 	webAdmin := wa{
-		bus: bus,
-		lg:  lg,
-		tp:  tp,
-		db:  db,
+		lg: lg,
+		tp: tp,
+		db: db,
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/login", webAdmin.login)

@@ -4,6 +4,9 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+/**
+ * A wrapper around the database for correctly handling login
+ */
 type Login interface {
 	Login(email, password string) (*Usr, error)
 	NewUser(email, password string) (*Usr, error)

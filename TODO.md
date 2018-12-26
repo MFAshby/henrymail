@@ -20,7 +20,6 @@ How to do it
 * SQLite 3 storage https://github.com/mattn/go-sqlite3
 * HTML templating https://golang.org/pkg/html/template/
 * Config github.com/spf13/viper
-* Event bus https://github.com/asaskevich/EventBus
 
 Additional really useful features
 =================================
@@ -30,3 +29,4 @@ Additional really useful features
 * Probably read https://blog.cloudflare.com/exposing-go-on-the-internet/
 * CSRF protection
 * SQLite concurrency control
+* Sending retry with https://github.com/robfig/cron

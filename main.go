@@ -1,7 +1,7 @@
 package main
 
 import (
-	ev "github.com/asaskevich/EventBus"
+	"log"
 )
 
 func main() {
@@ -10,18 +10,19 @@ func main() {
 	database := NewDatabase()
 	login := NewLogin(database)
 
-	// Bus for posting async stuff
-	bus := ev.New()
-
-	// Log everything that is posted to the bus
-	StartEventLogger(bus)
-
-	// Various user facing services
-	StartMsa(bus, login)
-	StartMta(bus)
+	// Define processing chains
+	sender := NewSender(database)
+	StartMsa(NewLogger(sender), login)
+	StartMta(NewLogger(NewSaver(database)))
 	StartImap(login, database)
-	StartWebAdmin(bus, login, database)
+	StartWebAdmin(login, database)
 
+	err := sender.StartRetries()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Test data setup
 	u1, _ := login.NewUser("martin@test.com", "12345")
 	_, _ = login.NewUser("someone@test.com", "12345")
 	m1, _ := database.InsertMailbox("INBOX", u1.Id)
