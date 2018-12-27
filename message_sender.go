@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"github.com/emersion/go-message"
@@ -42,7 +41,8 @@ func (s *sender) sendOrStoreForRetry(to, from string, timestamp time.Time, conte
 	if e := s.sendTo(to, from, content); e == nil {
 		return nil
 	}
-	return s.db.InsertQueue(from, to, content, timestamp)
+	_, e := s.db.InsertQueue(from, to, content, timestamp)
+	return e
 }
 
 /**
@@ -86,9 +86,9 @@ func (s *sender) sendToHost(to, from, host string, content []byte) error {
 	if err != nil {
 		return err
 	}
-	err = client.StartTLS(&tls.Config{
-		ServerName: host,
-	})
+	//err = client.StartTLS(&tls.Config{
+	//	ServerName: host,
+	//})
 	if err != nil {
 		return err
 	}

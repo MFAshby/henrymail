@@ -4,13 +4,17 @@ import (
 	"time"
 )
 
+type HasId struct {
+	Id int64
+}
+
 type Usr struct {
-	Id    int64
+	HasId
 	Email string
 }
 
 type Mbx struct {
-	Id          int64
+	HasId
 	UserId      int64
 	Name        string
 	Messages    uint32
@@ -21,7 +25,7 @@ type Mbx struct {
 }
 
 type Msg struct {
-	Id        int64
+	HasId
 	MbxId     int64
 	Content   []byte
 	Uid       uint32
@@ -41,7 +45,7 @@ type ReceivedMsg struct {
 }
 
 type QueuedMsg struct {
-	Id        int64
+	HasId
 	From      string
 	To        string
 	Content   []byte

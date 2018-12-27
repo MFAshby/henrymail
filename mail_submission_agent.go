@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"os"
 )
 
 /**
@@ -24,6 +25,7 @@ func StartMsa(proc MsgProcessor, lg Login) {
 	s.MaxMessageBytes = GetInt(MaxMessageBytesKey)
 	s.MaxRecipients = GetInt(MaxRecipientsKey)
 	s.AllowInsecureAuth = GetBool(AllowInsecureAuthKey)
+	s.Debug = os.Stdout
 	go func() {
 		log.Println("Starting mail submission agent at ", s.Addr)
 		if err := s.ListenAndServe(); err != nil {

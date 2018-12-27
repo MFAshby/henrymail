@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"os"
 )
 
 /**
@@ -23,6 +24,7 @@ func StartMta(proc MsgProcessor) {
 	s.MaxMessageBytes = GetInt(MaxMessageBytesKey)
 	s.MaxRecipients = GetInt(MaxRecipientsKey)
 	s.AllowInsecureAuth = GetBool(AllowInsecureAuthKey)
+	s.Debug = os.Stdout
 	go func() {
 		log.Println("Starting mail transfer agent at ", s.Addr)
 		if err := s.ListenAndServe(); err != nil {

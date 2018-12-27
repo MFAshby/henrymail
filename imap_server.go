@@ -11,6 +11,7 @@ import (
 	"github.com/emersion/go-message"
 	"io/ioutil"
 	"log"
+	"os"
 	"time"
 )
 
@@ -298,17 +299,6 @@ func (m *imb) UpdateMessagesFlags(uid bool, seqset *imap.SeqSet, operation imap.
 	return nil
 }
 
-type stringSl []string
-
-func (sl stringSl) contains(s string) bool {
-	for _, x := range sl {
-		if s == x {
-			return true
-		}
-	}
-	return false
-}
-
 func (m *imb) CopyMessages(uid bool, seqset *imap.SeqSet, dest string) error {
 	if !uid {
 		return errors.New("operation not supported")
@@ -344,16 +334,26 @@ func (m *imb) Expunge() error {
 	}
 
 	for _, msg := range msgs {
-		for _, flg := range msg.Flags {
-			if flg == imap.DeletedFlag {
-				e = m.db.DeleteMessage(msg.Id)
-				if e != nil {
-					return e
-				}
+		var f stringSl = msg.Flags
+		if f.contains(imap.DeletedFlag) {
+			e = m.db.DeleteMessage(msg.Id)
+			if e != nil {
+				return e
 			}
 		}
 	}
 	return nil
+}
+
+type stringSl []string
+
+func (sl stringSl) contains(s string) bool {
+	for _, x := range sl {
+		if s == x {
+			return true
+		}
+	}
+	return false
 }
 
 func StartImap(lg Login, db Database) {
@@ -364,6 +364,7 @@ func StartImap(lg Login, db Database) {
 	s := server.New(be)
 	s.Addr = GetString(ImapAddressKey)
 	s.AllowInsecureAuth = true
+	s.Debug = os.Stdout
 	go func() {
 		log.Println("Starting IMAP server at ", s.Addr)
 		if err := s.ListenAndServe(); err != nil {

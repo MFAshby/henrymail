@@ -21,6 +21,7 @@ How to do it
 * HTML templating https://golang.org/pkg/html/template/
 * Config github.com/spf13/viper
 * Auto cert https://godoc.org/golang.org/x/crypto/acme/autocert
+* DKIM
 
 Additional really useful features
 =================================
@@ -36,4 +37,5 @@ Order to do it in
 =================
 * Get a basic user admin interface
 * Get working SMTP & IMAP implementation backed by a database
-* 
+* Fill in all the remaining features as you like.
+* Try to keep it modular
