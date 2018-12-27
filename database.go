@@ -73,8 +73,25 @@ func (db *sqliteDb) GetMessages(mbxId int64, lowerUid uint32) ([]*Msg, error) {
 		if e != nil {
 			return nil, e
 		}
+
+		flagRows, e := db.db.Query(`
+			SELECT flag FROM messageflags where messageid = ?
+		`, msg.Id)
+		if e != nil {
+			return nil, e
+		}
+		msg.Flags = make([]string, 0)
+		for flagRows.Next() {
+			var flag string
+			e := flagRows.Scan(&flag)
+			if e != nil {
+				return nil, e
+			}
+			msg.Flags = append(msg.Flags, flag)
+		}
 		msgs = append(msgs, msg)
 	}
+
 	return msgs, nil
 }
 

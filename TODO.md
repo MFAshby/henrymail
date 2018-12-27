@@ -20,6 +20,7 @@ How to do it
 * SQLite 3 storage https://github.com/mattn/go-sqlite3
 * HTML templating https://golang.org/pkg/html/template/
 * Config github.com/spf13/viper
+* Auto cert https://godoc.org/golang.org/x/crypto/acme/autocert
 
 Additional really useful features
 =================================
@@ -30,3 +31,9 @@ Additional really useful features
 * CSRF protection
 * SQLite concurrency control
 * Sending retry with https://github.com/robfig/cron
+
+Order to do it in
+=================
+* Get a basic user admin interface
+* Get working SMTP & IMAP implementation backed by a database
+* 

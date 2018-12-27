@@ -36,9 +36,9 @@ func (s *Sender) Process(w *Wrap) error {
 	}
 }
 
-func (s *Sender) StartRetries() error {
+func (s *Sender) StartRetries() {
 	cr := cron.New()
-	return cr.AddFunc(GetString(RetryCronSpec), func() {
+	err := cr.AddFunc(GetString(RetryCronSpec), func() {
 		msgs, err := s.db.GetQueuedMsgs()
 		if err != nil {
 			// Somehow we should alert, but smth is already wrong I guess
@@ -57,6 +57,9 @@ func (s *Sender) StartRetries() error {
 			}
 		}
 	})
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func (s *Sender) sendOrStoreForRetry(to, from string, timestamp time.Time, content []byte) error {

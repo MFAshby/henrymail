@@ -15,7 +15,7 @@ type logger struct {
 func (l logger) Process(w *Wrap) error {
 	log.Print("From: ", w.From)
 	log.Print("To: ", w.To)
-	log.Println("Content:", w.Content)
+	log.Println("Content:", string(w.Content))
 	return l.next.Process(w)
 }
 
