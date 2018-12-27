@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
 	"github.com/emersion/go-message"
 	"github.com/emersion/go-smtp"
 	"io"
@@ -13,7 +14,7 @@ import (
 /**
  * Accepts new mail from our own users for sending
  */
-func StartMsa(proc MsgProcessor, lg Login) {
+func StartMsa(proc MsgProcessor, lg Login, config *tls.Config) {
 	be := &sbe{
 		proc: proc,
 		lg:   lg,
@@ -26,6 +27,7 @@ func StartMsa(proc MsgProcessor, lg Login) {
 	s.MaxRecipients = GetInt(MaxRecipientsKey)
 	s.AllowInsecureAuth = GetBool(AllowInsecureAuthKey)
 	s.Debug = os.Stdout
+	s.TLSConfig = config
 	go func() {
 		log.Println("Starting mail submission agent at ", s.Addr)
 		if err := s.ListenAndServe(); err != nil {

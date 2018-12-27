@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
 	"github.com/emersion/go-message"
 	"github.com/emersion/go-smtp"
 	"io"
@@ -13,7 +14,7 @@ import (
 /**
  * Accepts new mail from other servers
  */
-func StartMta(proc MsgProcessor) {
+func StartMta(proc MsgProcessor, config *tls.Config) {
 	b := &tbe{
 		proc: proc,
 	}
@@ -23,8 +24,11 @@ func StartMta(proc MsgProcessor) {
 	s.MaxIdleSeconds = GetInt(MaxIdleSecondsKey)
 	s.MaxMessageBytes = GetInt(MaxMessageBytesKey)
 	s.MaxRecipients = GetInt(MaxRecipientsKey)
-	s.AllowInsecureAuth = GetBool(AllowInsecureAuthKey)
+	//s.AllowInsecureAuth = GetBool(AllowInsecureAuthKey)
+	s.AuthDisabled = true
 	s.Debug = os.Stdout
+	s.TLSConfig = config
+
 	go func() {
 		log.Println("Starting mail transfer agent at ", s.Addr)
 		if err := s.ListenAndServe(); err != nil {

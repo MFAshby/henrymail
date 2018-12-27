@@ -27,7 +27,7 @@ func SetConfigDefaults() {
 	viper.SetDefault(MaxIdleSecondsKey, 300)
 	viper.SetDefault(MaxMessageBytesKey, 1024*1024) // 1MB
 	viper.SetDefault(MaxRecipientsKey, 50)
-	viper.SetDefault(AllowInsecureAuthKey, true)
+	viper.SetDefault(AllowInsecureAuthKey, false)
 	viper.SetDefault(RetryCronSpec, "* * * * *") // every minute
 	viper.SetDefault(RetryCount, 3)
 }

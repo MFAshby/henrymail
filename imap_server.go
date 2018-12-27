@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"github.com/emersion/go-imap"
@@ -356,7 +357,7 @@ func (sl stringSl) contains(s string) bool {
 	return false
 }
 
-func StartImap(lg Login, db Database) {
+func StartImap(lg Login, db Database, config *tls.Config) {
 	be := &ibe{
 		lg: lg,
 		db: db,
@@ -365,6 +366,7 @@ func StartImap(lg Login, db Database) {
 	s.Addr = GetString(ImapAddressKey)
 	s.AllowInsecureAuth = true
 	s.Debug = os.Stdout
+	s.TLSConfig = config
 	go func() {
 		log.Println("Starting IMAP server at ", s.Addr)
 		if err := s.ListenAndServe(); err != nil {

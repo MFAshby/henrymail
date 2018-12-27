@@ -1,2 +1,4 @@
 henrymail
 henrymail.db
+*.crt
+*.key

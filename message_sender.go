@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"github.com/emersion/go-message"
@@ -86,9 +87,12 @@ func (s *sender) sendToHost(to, from, host string, content []byte) error {
 	if err != nil {
 		return err
 	}
-	//err = client.StartTLS(&tls.Config{
-	//	ServerName: host,
-	//})
+	b, _ := client.Extension("STARTTLS")
+	if b {
+		err = client.StartTLS(&tls.Config{
+			ServerName: host,
+		})
+	}
 	if err != nil {
 		return err
 	}

@@ -122,8 +122,8 @@ func (wa *wa) login(w http.ResponseWriter, r *http.Request) {
 		Name:     authCookieName,
 		Value:    tokenString,
 		HttpOnly: true,
-		//Secure: true,
-		Domain: GetString(DomainKey),
+		Secure:   true,
+		Domain:   GetString(DomainKey),
 	})
 	http.Redirect(w, r, "/", http.StatusFound)
 }
