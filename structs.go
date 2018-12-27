@@ -1,29 +1,8 @@
 package main
 
 import (
-	"bytes"
-	"github.com/emersion/go-message"
 	"time"
 )
-
-type MsgProcessor interface {
-	Process(*Wrap) error
-}
-
-type Wrap struct {
-	From      string
-	To        []string
-	Content   []byte
-	Timestamp time.Time
-}
-
-type QueuedMsg struct {
-	From      string
-	To        string
-	Content   []byte
-	Timestamp time.Time
-	retries   uint32
-}
 
 type Usr struct {
 	Id    int64
@@ -42,13 +21,30 @@ type Mbx struct {
 }
 
 type Msg struct {
-	Id      int64
-	MbxId   int64
-	Content []byte
-	Uid     uint32
-	Flags   []string
+	Id        int64
+	MbxId     int64
+	Content   []byte
+	Uid       uint32
+	Flags     []string
+	Timestamp time.Time
 }
 
-func (m *Msg) Entity() (*message.Entity, error) {
-	return message.Read(bytes.NewReader(m.Content))
+type MsgProcessor interface {
+	Process(*ReceivedMsg) error
+}
+
+type ReceivedMsg struct {
+	From      string
+	To        []string
+	Content   []byte
+	Timestamp time.Time
+}
+
+type QueuedMsg struct {
+	Id        int64
+	From      string
+	To        string
+	Content   []byte
+	Timestamp time.Time
+	Retries   int
 }

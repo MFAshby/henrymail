@@ -70,7 +70,7 @@ func (u *sus) Send(from string, to []string, r io.Reader) error {
 	}
 
 	// Pass it on
-	return u.proc.Process(&Wrap{
+	return u.proc.Process(&ReceivedMsg{
 		From:    from,
 		To:      to,
 		Content: content,

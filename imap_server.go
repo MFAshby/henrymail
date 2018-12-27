@@ -3,11 +3,12 @@ package main
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"github.com/emersion/go-imap"
 	"github.com/emersion/go-imap/backend"
 	"github.com/emersion/go-imap/backend/backendutil"
 	"github.com/emersion/go-imap/server"
-	message2 "github.com/emersion/go-message"
+	"github.com/emersion/go-message"
 	"io/ioutil"
 	"log"
 	"time"
@@ -46,21 +47,21 @@ func (u *ius) ListMailboxes(subscribed bool) ([]backend.Mailbox, error) {
 	mailboxes := make([]backend.Mailbox, len(mbxs))
 	for ix, mbx := range mbxs {
 		mailboxes[ix] = &imb{
-			x:  mbx,
-			db: u.db,
+			mbxId: mbx.Id,
+			db:    u.db,
 		}
 	}
 	return mailboxes, nil
 }
 
 func (u *ius) GetMailbox(name string) (backend.Mailbox, error) {
-	mbx, e := u.db.GetMailbox(name, u.user.Id)
+	mbx, e := u.db.GetMailboxByName(name, u.user.Id)
 	if e != nil {
 		return nil, e
 	}
 	return &imb{
-		x:  mbx,
-		db: u.db,
+		mbxId: mbx.Id,
+		db:    u.db,
 	}, nil
 }
 
@@ -70,24 +71,38 @@ func (u *ius) CreateMailbox(name string) error {
 }
 
 func (u *ius) DeleteMailbox(name string) error {
-	return errors.New("operation not supported yet")
+	return u.db.DeleteMailbox(name, u.user.Id)
 }
 
 func (u *ius) RenameMailbox(existingName, newName string) error {
-	return errors.New("operation not supported yet")
+	return u.db.RenameMailbox(u.user.Id, existingName, newName)
 }
 
 func (*ius) Logout() error {
 	return nil
 }
 
+// Only store the ID, so we dont end up with stale data being read!
 type imb struct {
-	x  *Mbx
-	db Database
+	mbxId int64
+	db    Database
+}
+
+func (m *imb) getMbx() *Mbx {
+	mbx, e := m.db.GetMailboxById(m.mbxId)
+	if e != nil {
+		log.Println(e)
+		return &Mbx{}
+	}
+	return mbx
 }
 
 func (m *imb) Name() string {
-	return m.x.Name
+	mbx, e := m.db.GetMailboxById(m.mbxId)
+	if e != nil {
+		return "ERROR"
+	}
+	return mbx.Name
 }
 
 func (m *imb) Info() (*imap.MailboxInfo, error) {
@@ -99,7 +114,8 @@ func (m *imb) Info() (*imap.MailboxInfo, error) {
 }
 
 func (m *imb) Status(items []imap.StatusItem) (*imap.MailboxStatus, error) {
-	status := imap.NewMailboxStatus(m.x.Name, items)
+	mbx := m.getMbx()
+	status := imap.NewMailboxStatus(mbx.Name, items)
 	//status.Flags = m.x.Flags
 	status.PermanentFlags = []string{"\\*"}
 	//status.UnseenSeqNum = mbox.unseenSeqNum()
@@ -107,15 +123,15 @@ func (m *imb) Status(items []imap.StatusItem) (*imap.MailboxStatus, error) {
 	for _, name := range items {
 		switch name {
 		case imap.StatusMessages:
-			status.Messages = m.x.Messages
+			status.Messages = mbx.Messages
 		case imap.StatusUidNext:
-			status.UidNext = m.x.UidNext
+			status.UidNext = mbx.UidNext
 		case imap.StatusUidValidity:
-			status.UidValidity = m.x.UidValidity
+			status.UidValidity = mbx.UidValidity
 		case imap.StatusRecent:
-			status.Recent = m.x.Recent
+			status.Recent = mbx.Recent
 		case imap.StatusUnseen:
-			status.Unseen = m.x.Unseen
+			status.Unseen = mbx.Unseen
 		}
 	}
 
@@ -123,7 +139,7 @@ func (m *imb) Status(items []imap.StatusItem) (*imap.MailboxStatus, error) {
 }
 
 func (m *imb) SetSubscribed(subscribed bool) error {
-	return errors.New("operation not supported")
+	return m.db.SetMailboxSubscribed(m.mbxId, subscribed)
 }
 
 func (*imb) Check() error {
@@ -135,30 +151,32 @@ func (m *imb) ListMessages(uid bool, seqset *imap.SeqSet, items []imap.FetchItem
 	if !uid {
 		return errors.New("operation not yet supported")
 	}
-
-	// Two passes, because seqset may require multiple database fetches
-	messages := make([]*Msg, 0)
 	for _, seq := range seqset.Set {
-		// Unbounded search on UID
-		upperUid := -1
-		if seq.Stop > 0 {
-			upperUid = int(seq.Stop)
-		}
-		msgs, e := m.db.GetMessages(m.x.Id, int(seq.Start), upperUid)
+		msgs, e := m.getSeqMessages(seq)
 		if e != nil {
 			return e
 		}
-		messages = append(messages, msgs...)
-	}
-
-	for ix, msg := range messages {
-		message, e := msg.Fetch(uint32(ix), items)
-		if e != nil {
-			return e
+		for ix, msg := range msgs {
+			imsg, e := msg.Fetch(uint32(ix), items)
+			if e != nil {
+				return e
+			}
+			ch <- imsg
 		}
-		ch <- message
 	}
 	return nil
+}
+
+func (m *imb) getAllMessages() ([]*Msg, error) {
+	return m.db.GetMessages(m.mbxId, -1, -1)
+}
+
+func (m *imb) getSeqMessages(seq imap.Seq) ([]*Msg, error) {
+	stop := -1
+	if seq.Stop != 0 {
+		stop = int(seq.Stop)
+	}
+	return m.db.GetMessages(m.mbxId, int(seq.Start), stop)
 }
 
 func (m *Msg) Fetch(seqNum uint32, items []imap.FetchItem) (*imap.Message, error) {
@@ -166,10 +184,10 @@ func (m *Msg) Fetch(seqNum uint32, items []imap.FetchItem) (*imap.Message, error
 	for _, item := range items {
 		switch item {
 		case imap.FetchEnvelope:
-			e, _ := message2.Read(bytes.NewReader(m.Content))
+			e, _ := message.Read(bytes.NewReader(m.Content))
 			fetched.Envelope, _ = backendutil.FetchEnvelope(e.Header)
 		case imap.FetchBody, imap.FetchBodyStructure:
-			e, _ := message2.Read(bytes.NewReader(m.Content))
+			e, _ := message.Read(bytes.NewReader(m.Content))
 			fetched.BodyStructure, _ = backendutil.FetchBodyStructure(e, item == imap.FetchBodyStructure)
 		case imap.FetchFlags:
 			fetched.Flags = m.Flags
@@ -185,7 +203,7 @@ func (m *Msg) Fetch(seqNum uint32, items []imap.FetchItem) (*imap.Message, error
 				break
 			}
 
-			e, _ := message2.Read(bytes.NewReader(m.Content))
+			e, _ := message.Read(bytes.NewReader(m.Content))
 			l, _ := backendutil.FetchBodySection(e, section)
 			fetched.Body[section] = l
 		}
@@ -198,9 +216,9 @@ func (m *Msg) Match(seqNum uint32, c *imap.SearchCriteria) (bool, error) {
 	if !backendutil.MatchSeqNumAndUid(seqNum, m.Uid, c) {
 		return false, nil
 	}
-	//if !backendutil.MatchDate(m.Date, c) {
-	//	return false, errors.New("operation not supported")
-	//}
+	if !backendutil.MatchDate(m.Timestamp, c) {
+		return false, nil
+	}
 	if !backendutil.MatchFlags(m.Flags, c) {
 		return false, nil
 	}
@@ -209,12 +227,15 @@ func (m *Msg) Match(seqNum uint32, c *imap.SearchCriteria) (bool, error) {
 	return backendutil.Match(e, c)
 }
 
+func (m *Msg) Entity() (*message.Entity, error) {
+	return message.Read(bytes.NewReader(m.Content))
+}
+
 func (m *imb) SearchMessages(uid bool, criteria *imap.SearchCriteria) ([]uint32, error) {
 	if !uid {
 		return nil, errors.New("uid not supported in SearchMessages")
 	}
-
-	msgs, e := m.db.GetMessages(m.x.Id, -1, -1)
+	msgs, e := m.getAllMessages()
 	if e != nil {
 		return nil, e
 	}
@@ -232,24 +253,107 @@ func (m *imb) SearchMessages(uid bool, criteria *imap.SearchCriteria) ([]uint32,
 }
 
 func (m *imb) CreateMessage(flags []string, date time.Time, body imap.Literal) error {
+	mbx := m.getMbx()
 	content, e := ioutil.ReadAll(body)
 	if e != nil {
 		return e
 	}
-	_, e = m.db.InsertMessage(content, flags, m.x.Id)
+	_, e = m.db.InsertMessage(content, flags, mbx.Id, time.Now())
 	return e
 }
 
-func (*imb) UpdateMessagesFlags(uid bool, seqset *imap.SeqSet, operation imap.FlagsOp, flags []string) error {
-	return errors.New("operation not supported")
+func (m *imb) UpdateMessagesFlags(uid bool, seqset *imap.SeqSet, operation imap.FlagsOp, flags []string) error {
+	if !uid {
+		return errors.New("operation not supported")
+	}
+	for _, seq := range seqset.Set {
+		msgs, e := m.getSeqMessages(seq)
+		if e != nil {
+			return e
+		}
+		for _, msg := range msgs {
+			var newFlags []string
+			switch operation {
+			case imap.SetFlags:
+				newFlags = flags
+			case imap.AddFlags:
+				newFlags = append(msg.Flags, flags...)
+			case imap.RemoveFlags:
+				newFlags := msg.Flags[:0]
+				var f stringSl = flags
+				for _, x := range msg.Flags {
+					if !f.contains(x) {
+						newFlags = append(newFlags, x)
+					}
+				}
+			default:
+				return errors.New(fmt.Sprintf("unexpected flags operation %v", operation))
+			}
+			e := m.db.SetMessageFlags(msg.Id, newFlags)
+			if e != nil {
+				return e
+			}
+		}
+	}
+	return nil
 }
 
-func (*imb) CopyMessages(uid bool, seqset *imap.SeqSet, dest string) error {
-	return errors.New("operation not supported")
+type stringSl []string
+
+func (sl stringSl) contains(s string) bool {
+	for _, x := range sl {
+		if s == x {
+			return true
+		}
+	}
+	return false
 }
 
-func (*imb) Expunge() error {
-	return errors.New("operation not supported")
+func (m *imb) CopyMessages(uid bool, seqset *imap.SeqSet, dest string) error {
+	if !uid {
+		return errors.New("operation not supported")
+	}
+	mbx := m.getMbx()
+	destMbx, e := m.db.GetMailboxByName(dest, mbx.UserId)
+	if e != nil {
+		return e
+	}
+	for _, seq := range seqset.Set {
+		stop := -1
+		if seq.Stop > 0 {
+			stop = int(seq.Stop)
+		}
+		msgs, e := m.db.GetMessages(m.mbxId, int(seq.Start), stop)
+		if e != nil {
+			return e
+		}
+		for _, msg := range msgs {
+			_, e := m.db.InsertMessage(msg.Content, msg.Flags, destMbx.Id, time.Now())
+			if e != nil {
+				return e
+			}
+		}
+	}
+	return nil
+}
+
+func (m *imb) Expunge() error {
+	msgs, e := m.db.GetMessages(m.mbxId, -1, -1)
+	if e != nil {
+		return e
+	}
+
+	for _, msg := range msgs {
+		for _, flg := range msg.Flags {
+			if flg == imap.DeletedFlag {
+				e = m.db.DeleteMessage(msg.Id)
+				if e != nil {
+					return e
+				}
+			}
+		}
+	}
+	return nil
 }
 
 func StartImap(lg Login, db Database) {

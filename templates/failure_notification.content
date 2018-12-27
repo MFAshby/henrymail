@@ -1,0 +1,3 @@
+Your message to {{ .To }} failed to send after {{ .Retries }} attempts.
+It will not be retried any further.
+

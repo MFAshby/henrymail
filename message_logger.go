@@ -12,7 +12,7 @@ type logger struct {
 	next MsgProcessor
 }
 
-func (l logger) Process(w *Wrap) error {
+func (l logger) Process(w *ReceivedMsg) error {
 	log.Print("From: ", w.From)
 	log.Print("To: ", w.To)
 	log.Println("Content:", string(w.Content))

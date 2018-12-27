@@ -14,6 +14,7 @@ const (
 	AllowInsecureAuthKey = "ALLOW_INSECURE_AUTH"
 	WebAdminAddressKey   = "WEB_ADMIN_ADDRESS"
 	RetryCronSpec        = "RETRY_CRON_SPEC"
+	RetryCount           = "RETRY_COUNT"
 )
 
 func SetConfigDefaults() {
@@ -22,12 +23,13 @@ func SetConfigDefaults() {
 	viper.SetDefault(MtaAddressKey, ":1025")
 	viper.SetDefault(ImapAddressKey, ":1143")
 	viper.SetDefault(WebAdminAddressKey, ":1080")
-	viper.SetDefault(DomainKey, "mfashby.net")
+	viper.SetDefault(DomainKey, "henry-pi.site")
 	viper.SetDefault(MaxIdleSecondsKey, 300)
 	viper.SetDefault(MaxMessageBytesKey, 1024*1024) // 1MB
 	viper.SetDefault(MaxRecipientsKey, 50)
 	viper.SetDefault(AllowInsecureAuthKey, true)
 	viper.SetDefault(RetryCronSpec, "* * * * *") // every minute
+	viper.SetDefault(RetryCount, 3)
 }
 
 func GetString(key string) string {

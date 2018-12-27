@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/emersion/go-message"
 	"github.com/robfig/cron"
+	"html/template"
 	"log"
 	"net"
 	"net/smtp"
@@ -14,15 +17,14 @@ import (
 
 /**
  * Forward messages on to their destinations by acting as an SMTP client.
+ * Store messages and retry them later
  */
-type Sender struct {
+type sender struct {
 	db Database
 }
 
-func (s *Sender) Process(w *Wrap) error {
+func (s *sender) Process(w *ReceivedMsg) error {
 	errs := make([]string, 0)
-	// Split out and call each of the recipients SMTP servers individually.
-	// This could be more efficient, grouping by host etc but it's not for now.
 	for _, to := range w.To {
 		err := s.sendOrStoreForRetry(to, w.From, w.Timestamp, w.Content)
 		if err != nil {
@@ -36,33 +38,7 @@ func (s *Sender) Process(w *Wrap) error {
 	}
 }
 
-func (s *Sender) StartRetries() {
-	cr := cron.New()
-	err := cr.AddFunc(GetString(RetryCronSpec), func() {
-		msgs, err := s.db.GetQueuedMsgs()
-		if err != nil {
-			// Somehow we should alert, but smth is already wrong I guess
-			log.Println(err)
-			return
-		}
-
-		for _, q := range msgs {
-			err := s.sendTo(q.To, q.From, q.Content)
-			if err != nil {
-				// Increment & check retry limit,
-				// Msg back to sender
-				// Delete from queue
-			} else {
-				// Delete from queue
-			}
-		}
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-func (s *Sender) sendOrStoreForRetry(to, from string, timestamp time.Time, content []byte) error {
+func (s *sender) sendOrStoreForRetry(to, from string, timestamp time.Time, content []byte) error {
 	if e := s.sendTo(to, from, content); e == nil {
 		return nil
 	}
@@ -72,7 +48,7 @@ func (s *Sender) sendOrStoreForRetry(to, from string, timestamp time.Time, conte
 /**
  * Look for SMTP servers to send to,
  */
-func (s *Sender) sendTo(to, from string, content []byte) error {
+func (s *sender) sendTo(to, from string, content []byte) error {
 	parts := strings.Split(to, "@")
 	host := parts[1]
 	mxes, e := net.LookupMX(host)
@@ -101,7 +77,7 @@ func (s *Sender) sendTo(to, from string, content []byte) error {
  * Dials the other SMTP server and actually sends
  * the message. Error if anything went wrong.
  */
-func (s *Sender) sendToHost(to, from, host string, content []byte) error {
+func (s *sender) sendToHost(to, from, host string, content []byte) error {
 	client, err := smtp.Dial(host + ":25")
 	if err != nil {
 		return err
@@ -135,8 +111,99 @@ func (s *Sender) sendToHost(to, from, host string, content []byte) error {
 	return client.Quit()
 }
 
-func NewSender(db Database) *Sender {
-	return &Sender{
+func (s *sender) doRetries() {
+	msgs, err := s.db.GetQueue()
+	if err != nil {
+		// Somehow we should alert, but smth is already wrong I guess
+		log.Println(err)
+		return
+	}
+
+	for _, q := range msgs {
+		err := s.sendTo(q.To, q.From, q.Content)
+		if err != nil {
+			if q.Retries >= GetInt(RetryCount) {
+				err = s.sendFailureNotification(q.To, q.From, q.Content, q.Retries)
+				if err != nil {
+					log.Println(err)
+				}
+				err = s.db.DeleteQueue(q.Id)
+				if err != nil {
+					log.Println(err)
+				}
+			} else {
+				err = s.db.IncrementRetries(q.Id)
+				if err != nil {
+					log.Println(err)
+				}
+			}
+		} else {
+			err = s.db.DeleteQueue(q.Id)
+			if err != nil {
+				log.Println(err)
+			}
+		}
+	}
+}
+
+func (s *sender) sendFailureNotification(originalMsgTo, originalMsgFrom string, content []byte, retries int) error {
+	// We will only be sending failure notifications to our own users.
+	// so we can go direct to the database instead of talking to ourselves via SMTP.
+	ibxId, e := s.db.GetInboxId(originalMsgFrom)
+	if e != nil {
+		return e
+	}
+
+	// Render the error message template
+	buf := new(bytes.Buffer)
+	e = template.Must(template.ParseFiles("templates/failure_notification.content")).
+		ExecuteTemplate(buf, "failure_notification.content", struct {
+			To      string
+			Retries int
+		}{
+			To:      originalMsgTo,
+			Retries: retries,
+		})
+	if e != nil {
+		return e
+	}
+
+	// Build a message from it
+	retryPart, e := message.New(message.Header{}, buf)
+	if e != nil {
+		return e
+	}
+
+	// Read the original msg
+	original, e := message.Read(bytes.NewReader(content))
+	if e != nil {
+		return e
+	}
+
+	// Bundle into a multipart message
+	retryNotification, e := message.NewMultipart(message.Header{}, []*message.Entity{
+		retryPart,
+		original,
+	})
+	if e != nil {
+		return e
+	}
+
+	// Save directly to the database
+	buffer := new(bytes.Buffer)
+	_ = retryNotification.WriteTo(buffer)
+	_, e = s.db.InsertMessage(buffer.Bytes(), []string{}, ibxId, time.Now())
+	return e
+}
+
+func NewSender(db Database) *sender {
+	sender := &sender{
 		db: db,
 	}
+	cr := cron.New()
+	err := cr.AddFunc(GetString(RetryCronSpec), sender.doRetries)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return sender
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"strings"
+	"time"
 )
 
 /**
@@ -12,7 +13,7 @@ type saver struct {
 	db Database
 }
 
-func (s *saver) Process(wrap *Wrap) error {
+func (s *saver) Process(wrap *ReceivedMsg) error {
 	// Find all the inboxes for each user, if we can't do them all we'll do none.
 	inboxIds := make(map[string]int64)
 	for _, to := range wrap.To {
@@ -28,7 +29,7 @@ func (s *saver) Process(wrap *Wrap) error {
 	errs := make([]string, 0)
 	for _, to := range wrap.To {
 		ibxId := inboxIds[to]
-		_, e := s.db.InsertMessage(wrap.Content, []string{}, ibxId)
+		_, e := s.db.InsertMessage(wrap.Content, []string{}, ibxId, time.Now())
 		if e != nil {
 			errs = append(errs, e.Error())
 		}

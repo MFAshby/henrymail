@@ -5,7 +5,7 @@ package main
  */
 type hole struct{}
 
-func (hole) Process(w *Wrap) error {
+func (hole) Process(w *ReceivedMsg) error {
 	return nil
 }
 
