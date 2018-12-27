@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"github.com/emersion/go-message"
 	"time"
 )
 
@@ -45,4 +47,8 @@ type Msg struct {
 	Content []byte
 	Uid     uint32
 	Flags   []string
+}
+
+func (m *Msg) Entity() (*message.Entity, error) {
+	return message.Read(bytes.NewReader(m.Content))
 }

@@ -22,6 +22,7 @@ func main() {
 	m1, _ := database.InsertMailbox("INBOX", u1.Id)
 	_, _ = database.InsertMailbox("Trash", u1.Id)
 	_, _ = database.InsertMailbox("Sent", u1.Id)
+	_, _ = database.InsertMailbox("Drafts", u1.Id)
 	_, _ = database.InsertMessage([]byte("Hello world"), []string{"\\Recent"}, m1.Id)
 
 	// Wait for exit

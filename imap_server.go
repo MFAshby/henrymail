@@ -100,16 +100,30 @@ func (m *imb) Info() (*imap.MailboxInfo, error) {
 
 func (m *imb) Status(items []imap.StatusItem) (*imap.MailboxStatus, error) {
 	status := imap.NewMailboxStatus(m.x.Name, items)
-	status.Messages = m.x.Messages
-	status.Unseen = m.x.Unseen
-	status.Recent = m.x.Recent
-	status.UidNext = m.x.UidNext
-	status.UidValidity = m.x.UidValidity
+	//status.Flags = m.x.Flags
+	status.PermanentFlags = []string{"\\*"}
+	//status.UnseenSeqNum = mbox.unseenSeqNum()
+
+	for _, name := range items {
+		switch name {
+		case imap.StatusMessages:
+			status.Messages = m.x.Messages
+		case imap.StatusUidNext:
+			status.UidNext = m.x.UidNext
+		case imap.StatusUidValidity:
+			status.UidValidity = m.x.UidValidity
+		case imap.StatusRecent:
+			status.Recent = m.x.Recent
+		case imap.StatusUnseen:
+			status.Unseen = m.x.Unseen
+		}
+	}
+
 	return status, nil
 }
 
 func (m *imb) SetSubscribed(subscribed bool) error {
-	return nil
+	return errors.New("operation not supported")
 }
 
 func (*imb) Check() error {
@@ -126,15 +140,15 @@ func (m *imb) ListMessages(uid bool, seqset *imap.SeqSet, items []imap.FetchItem
 	messages := make([]*Msg, 0)
 	for _, seq := range seqset.Set {
 		// Unbounded search on UID
-		if seq.Stop == 0 {
-			msgs, e := m.db.GetMessages(m.x.Id, seq.Start)
-			if e != nil {
-				return e
-			}
-			messages = append(messages, msgs...)
-		} else {
-			return errors.New("operation not yet supported")
+		upperUid := -1
+		if seq.Stop > 0 {
+			upperUid = int(seq.Stop)
 		}
+		msgs, e := m.db.GetMessages(m.x.Id, int(seq.Start), upperUid)
+		if e != nil {
+			return e
+		}
+		messages = append(messages, msgs...)
 	}
 
 	for ix, msg := range messages {
@@ -180,8 +194,41 @@ func (m *Msg) Fetch(seqNum uint32, items []imap.FetchItem) (*imap.Message, error
 	return fetched, nil
 }
 
-func (*imb) SearchMessages(uid bool, criteria *imap.SearchCriteria) ([]uint32, error) {
-	return []uint32{}, nil
+func (m *Msg) Match(seqNum uint32, c *imap.SearchCriteria) (bool, error) {
+	if !backendutil.MatchSeqNumAndUid(seqNum, m.Uid, c) {
+		return false, nil
+	}
+	//if !backendutil.MatchDate(m.Date, c) {
+	//	return false, errors.New("operation not supported")
+	//}
+	if !backendutil.MatchFlags(m.Flags, c) {
+		return false, nil
+	}
+
+	e, _ := m.Entity()
+	return backendutil.Match(e, c)
+}
+
+func (m *imb) SearchMessages(uid bool, criteria *imap.SearchCriteria) ([]uint32, error) {
+	if !uid {
+		return nil, errors.New("uid not supported in SearchMessages")
+	}
+
+	msgs, e := m.db.GetMessages(m.x.Id, -1, -1)
+	if e != nil {
+		return nil, e
+	}
+	var matches []uint32
+	for ix, msg := range msgs {
+		b, e := msg.Match(uint32(ix), criteria)
+		if e != nil {
+			return nil, e
+		}
+		if b {
+			matches = append(matches, msg.Uid)
+		}
+	}
+	return matches, nil
 }
 
 func (m *imb) CreateMessage(flags []string, date time.Time, body imap.Literal) error {
@@ -194,15 +241,15 @@ func (m *imb) CreateMessage(flags []string, date time.Time, body imap.Literal) e
 }
 
 func (*imb) UpdateMessagesFlags(uid bool, seqset *imap.SeqSet, operation imap.FlagsOp, flags []string) error {
-	return nil
+	return errors.New("operation not supported")
 }
 
 func (*imb) CopyMessages(uid bool, seqset *imap.SeqSet, dest string) error {
-	return nil
+	return errors.New("operation not supported")
 }
 
 func (*imb) Expunge() error {
-	return nil
+	return errors.New("operation not supported")
 }
 
 func StartImap(lg Login, db Database) {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
+	"strings"
 	"time"
 )
 
@@ -21,7 +22,7 @@ type Database interface {
 	DeleteMailbox(name string, usrId int64) error
 
 	InsertMessage(content []byte, flags []string, mbxId int64) (*Msg, error)
-	GetMessages(mbxId int64, lowerUid uint32) ([]*Msg, error)
+	GetMessages(mbxId int64, lowerUid, upperUid int) ([]*Msg, error)
 	GetInboxId(email string) (int64, error)
 	InsertQueue(from, to string, content []byte, timestamp time.Time) error
 	GetQueuedMsgs() ([]*QueuedMsg, error)
@@ -59,10 +60,28 @@ func (db *sqliteDb) GetInboxId(email string) (int64, error) {
 	return ibxId, e
 }
 
-func (db *sqliteDb) GetMessages(mbxId int64, lowerUid uint32) ([]*Msg, error) {
-	rows, e := db.db.Query(`
-			SELECT id, mailboxid, content, uid FROM messages WHERE mailboxid = ? AND uid >= ? 
-		`, mbxId, lowerUid)
+func (db *sqliteDb) GetMessages(mbxId int64, lowerUid, upperUid int) ([]*Msg, error) {
+	var params []interface{}
+	sb := strings.Builder{}
+	sb.WriteString(`
+			SELECT id, mailboxid, content, uid 
+			FROM messages 
+			WHERE mailboxid = ?
+	`)
+	params = append(params, mbxId)
+	if lowerUid > -1 {
+		sb.WriteString(`
+			AND uid >= ?
+		`)
+		params = append(params, lowerUid)
+	}
+	if upperUid > -1 {
+		sb.WriteString(`
+			AND uid <= ?
+		`)
+		params = append(params, upperUid)
+	}
+	rows, e := db.db.Query(sb.String(), params...)
 	if e != nil {
 		return nil, e
 	}
