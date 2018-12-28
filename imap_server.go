@@ -235,7 +235,7 @@ func (m *Msg) Entity() (*message.Entity, error) {
 
 func (m *imb) SearchMessages(uid bool, criteria *imap.SearchCriteria) ([]uint32, error) {
 	if !uid {
-		return nil, errors.New("uid not supported in SearchMessages")
+		return nil, errors.New("non-uid not supported in SearchMessages")
 	}
 	msgs, e := m.getAllMessages()
 	if e != nil {

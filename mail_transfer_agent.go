@@ -24,7 +24,6 @@ func StartMta(proc MsgProcessor, config *tls.Config) {
 	s.MaxIdleSeconds = GetInt(MaxIdleSecondsKey)
 	s.MaxMessageBytes = GetInt(MaxMessageBytesKey)
 	s.MaxRecipients = GetInt(MaxRecipientsKey)
-	//s.AllowInsecureAuth = GetBool(AllowInsecureAuthKey)
 	s.AuthDisabled = true
 	s.Debug = os.Stdout
 	s.TLSConfig = config

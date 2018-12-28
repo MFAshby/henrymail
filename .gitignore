@@ -1,4 +1,3 @@
 henrymail
 henrymail.db
-*.crt
-*.key
+certs/

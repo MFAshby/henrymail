@@ -1,10 +1,12 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"html/template"
 	"log"
+	"net"
 	"net/http"
 	"time"
 )
@@ -168,7 +170,7 @@ func checkAuth(next AuthenticatedHandler) http.Handler {
 	})
 }
 
-func StartWebAdmin(lg Login, db Database) {
+func StartWebAdmin(lg Login, db Database, config *tls.Config) {
 	// TODO bundle these into the binary for release builds?
 	tp := template.Must(template.New("html").
 		ParseFiles("templates/index.html",
@@ -186,11 +188,16 @@ func StartWebAdmin(lg Login, db Database) {
 	mux.Handle("/deleteUser", checkAuth(webAdmin.delete))
 	mux.Handle("/addUser", checkAuth(webAdmin.add))
 	mux.Handle("/", checkAuth(webAdmin.rootGet))
+	server := &http.Server{Addr: GetString(WebAdminAddressKey), Handler: mux}
+	l, e := net.Listen("tcp", server.Addr)
+	if e != nil {
+		log.Fatal(e)
+	}
+	tlsListener := tls.NewListener(l, config)
 
 	go func() {
-		addr := GetString(WebAdminAddressKey)
-		log.Println("Started admin web server at ", addr)
-		if err := http.ListenAndServe(addr, mux); err != nil {
+		log.Println("Started admin web server at ", server.Addr)
+		if err := server.Serve(tlsListener); err != nil {
 			log.Fatal(err)
 		}
 	}()

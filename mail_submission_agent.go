@@ -25,7 +25,6 @@ func StartMsa(proc MsgProcessor, lg Login, config *tls.Config) {
 	s.MaxIdleSeconds = GetInt(MaxIdleSecondsKey)
 	s.MaxMessageBytes = GetInt(MaxMessageBytesKey)
 	s.MaxRecipients = GetInt(MaxRecipientsKey)
-	s.AllowInsecureAuth = GetBool(AllowInsecureAuthKey)
 	s.Debug = os.Stdout
 	s.TLSConfig = config
 	go func() {
