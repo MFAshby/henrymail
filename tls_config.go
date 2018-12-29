@@ -9,7 +9,7 @@ import (
 func GetTLSConfig() *tls.Config {
 	if GetBool(UseAutoCertKey) {
 		m := &autocert.Manager{
-			Cache:      autocert.DirCache("certs"),
+			Cache:      autocert.DirCache("keys"),
 			Prompt:     autocert.AcceptTOS,
 			HostPolicy: autocert.HostWhitelist(GetString(DomainKey)),
 			Email:      GetString(AutoCertEmailKey),

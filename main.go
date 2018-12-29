@@ -15,7 +15,7 @@ func main() {
 	StartMsa(msaChain, login, tlsConfig)
 	StartMta(mtaChain, tlsConfig)
 	StartImap(login, database, tlsConfig)
-	StartWebAdmin(login, database, tlsConfig)
+	StartWebAdmin(login, database, tlsConfig, &pk.PublicKey)
 
 	// Setup admin user, domain keys if this if the first startup
 	SeedData(login)

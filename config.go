@@ -3,14 +3,16 @@ package main
 import "github.com/spf13/viper"
 
 const (
-	DomainKey          = "DOMAIN"
-	SqlitePathKey      = "DB_PATH"
+	DomainKey     = "DOMAIN"
+	SqlitePathKey = "DB_PATH"
+
+	// Network
 	MsaAddressKey      = "MSA_ADDRESS"
 	MtaAddressKey      = "MTA_ADDRESS"
 	ImapAddressKey     = "IMAP_ADDRESS"
 	WebAdminAddressKey = "WEB_ADMIN_ADDRESS"
 
-	// TLS stuff
+	// TLS
 	UseAutoCertKey     = "USE_AUTO_CERT"
 	AutoCertEmailKey   = "AUTO_CERT_EMAIL"
 	AutoCertCacheDir   = "AUTO_CERT_CACHE_DIR"
@@ -33,6 +35,12 @@ const (
 	DkimPrivateKeyFileKey = "DKIM_PRIVATE_KEY_FILE"
 	DkimPublicKeyFileKey  = "DKIM_PUBLIC_KEY_FILE"
 	DkimKeyBitsKey        = "DKIM_KEY_BITS"
+
+	// Web auth tokens
+	JwtTokenSecretFileKey = "JWT_TOKEN_SECRET_FILE"
+
+	// DNS
+	DnsServerKey = "DNS_SERVER"
 )
 
 func SetConfigDefaults() {
@@ -45,9 +53,9 @@ func SetConfigDefaults() {
 
 	viper.SetDefault(UseAutoCertKey, true)
 	viper.SetDefault(AutoCertEmailKey, "martin@ashbysoft.com")
-	viper.SetDefault(AutoCertCacheDir, "certs")
-	viper.SetDefault(CertificateFileKey, "certs/henry-pi.site.crt")
-	viper.SetDefault(KeyFileKey, "certs/henry-pi.site.key")
+	viper.SetDefault(AutoCertCacheDir, "keys")
+	viper.SetDefault(CertificateFileKey, "keys/henry-pi.site.crt")
+	viper.SetDefault(KeyFileKey, "keys/henry-pi.site.key")
 
 	viper.SetDefault(MaxIdleSecondsKey, 300)
 	viper.SetDefault(MaxMessageBytesKey, 1024*1024) // 1MB
@@ -59,9 +67,13 @@ func SetConfigDefaults() {
 	viper.SetDefault(AdminPasswordKey, "iloveemail")
 	viper.SetDefault(DefaultMailboxesKey, []string{"INBOX", "Trash", "Sent", "Drafts"})
 
-	viper.SetDefault(DkimPrivateKeyFileKey, "certs/dkim-private.pem")
-	viper.SetDefault(DkimPublicKeyFileKey, "certs/dkim-public.pem")
+	viper.SetDefault(DkimPrivateKeyFileKey, "keys/dkim-private.pem")
+	viper.SetDefault(DkimPublicKeyFileKey, "keys/dkim-public.pem")
 	viper.SetDefault(DkimKeyBitsKey, 2048)
+
+	viper.SetDefault(JwtTokenSecretFileKey, "keys/jwt-secret")
+
+	viper.SetDefault(DnsServerKey, "8.8.8.8:53")
 }
 
 func GetString(key string) string {

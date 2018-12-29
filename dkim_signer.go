@@ -21,7 +21,7 @@ type dkimSigner struct {
 func (d dkimSigner) Process(msg *ReceivedMsg) error {
 	options := &dkim.SignOptions{
 		Domain:   GetString(DomainKey),
-		Selector: "*",
+		Selector: "mx",
 		Signer:   d.pk,
 	}
 	var b bytes.Buffer

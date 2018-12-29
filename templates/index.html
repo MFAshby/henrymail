@@ -52,5 +52,22 @@
                 <input type="submit" value="Add user">
             </form>
         </div>
+
+        <div>
+            <h2>Health checks</h2>
+            {{ with .HealthChecks}}
+                <h3>DKIM</h3>
+                <p>Should be: <code>{{.TxtRecordShouldBe}}</code></p>
+                <p>Is: <code>{{.TxtRecordIs}}</code></p>
+            {{ end }}
+        </div>
+
+        <div>
+            <h2>Rotate JWT secret</h2>
+            <p>This will log everybody out of the web interface, including you, and force them to re-authenticate</p>
+            <form action="/rotateJwt">
+                <input type="submit" value="Rotate JWT secret">
+            </form>
+        </div>
     </body>
 </html>
