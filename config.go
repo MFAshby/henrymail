@@ -28,6 +28,11 @@ const (
 	AdminUsernameKey    = "ADMIN_USERNAME"
 	AdminPasswordKey    = "ADMIN_PASSWORD"
 	DefaultMailboxesKey = "DEFAULT_MAILBOXES"
+
+	// DKIM
+	DkimPrivateKeyFileKey = "DKIM_PRIVATE_KEY_FILE"
+	DkimPublicKeyFileKey  = "DKIM_PUBLIC_KEY_FILE"
+	DkimKeyBitsKey        = "DKIM_KEY_BITS"
 )
 
 func SetConfigDefaults() {
@@ -53,6 +58,10 @@ func SetConfigDefaults() {
 	viper.SetDefault(AdminUsernameKey, "admin")
 	viper.SetDefault(AdminPasswordKey, "iloveemail")
 	viper.SetDefault(DefaultMailboxesKey, []string{"INBOX", "Trash", "Sent", "Drafts"})
+
+	viper.SetDefault(DkimPrivateKeyFileKey, "certs/dkim-private.pem")
+	viper.SetDefault(DkimPublicKeyFileKey, "certs/dkim-public.pem")
+	viper.SetDefault(DkimKeyBitsKey, 2048)
 }
 
 func GetString(key string) string {

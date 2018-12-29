@@ -8,7 +8,8 @@ func main() {
 	login := NewLogin(database)
 	sender := NewSender(database)
 
-	msaChain := sender
+	pk := GetOrCreateDkim()
+	msaChain := NewDkimSigner(pk, sender)
 	mtaChain := NewDkimVerifier(NewSaver(database))
 
 	StartMsa(msaChain, login, tlsConfig)
@@ -16,14 +17,14 @@ func main() {
 	StartImap(login, database, tlsConfig)
 	StartWebAdmin(login, database, tlsConfig)
 
-	// Test data setup
-	ConfigureAdmin(login)
+	// Setup admin user, domain keys if this if the first startup
+	SeedData(login)
 
 	// Wait for exit
 	select {}
 }
 
-func ConfigureAdmin(login Login) {
+func SeedData(login Login) {
 	_, _ = login.NewUser(GetString(AdminUsernameKey)+"@"+GetString(DomainKey),
 		GetString(AdminPasswordKey), true)
 }
