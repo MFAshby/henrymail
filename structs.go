@@ -11,6 +11,7 @@ type HasId struct {
 type Usr struct {
 	HasId
 	Email string
+	Admin bool
 }
 
 type Mbx struct {

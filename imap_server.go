@@ -150,16 +150,20 @@ func (*imb) Check() error {
 
 func (m *imb) ListMessages(uid bool, seqset *imap.SeqSet, items []imap.FetchItem, ch chan<- *imap.Message) error {
 	defer close(ch)
-	if !uid {
-		return errors.New("operation not yet supported")
+	msgs, e := m.getAllMessages()
+	if e != nil {
+		return e
 	}
-	for _, seq := range seqset.Set {
-		msgs, e := m.getSeqMessages(seq)
-		if e != nil {
-			return e
+	for ix, msg := range msgs {
+		var check uint32
+		if uid {
+			check = msg.Uid
+		} else {
+			check = uint32(ix)
 		}
-		for ix, msg := range msgs {
-			imsg, e := msg.Fetch(uint32(ix), items)
+		if seqset.Contains(check) {
+			// Seqnum is an index from 1 :(
+			imsg, e := msg.Fetch(uint32(ix+1), items)
 			if e != nil {
 				return e
 			}
@@ -173,6 +177,7 @@ func (m *imb) getAllMessages() ([]*Msg, error) {
 	return m.db.GetMessages(m.mbxId, -1, -1)
 }
 
+/*
 func (m *imb) getSeqMessages(seq imap.Seq) ([]*Msg, error) {
 	stop := -1
 	if seq.Stop != 0 {
@@ -180,7 +185,7 @@ func (m *imb) getSeqMessages(seq imap.Seq) ([]*Msg, error) {
 	}
 	return m.db.GetMessages(m.mbxId, int(seq.Start), stop)
 }
-
+*/
 func (m *Msg) Fetch(seqNum uint32, items []imap.FetchItem) (*imap.Message, error) {
 	fetched := imap.NewMessage(seqNum, items)
 	for _, item := range items {
@@ -268,12 +273,19 @@ func (m *imb) UpdateMessagesFlags(uid bool, seqset *imap.SeqSet, operation imap.
 	if !uid {
 		return errors.New("operation not supported")
 	}
-	for _, seq := range seqset.Set {
-		msgs, e := m.getSeqMessages(seq)
-		if e != nil {
-			return e
+	msgs, e := m.getAllMessages()
+	if e != nil {
+		return e
+	}
+
+	for ix, msg := range msgs {
+		var check uint32
+		if uid {
+			check = msg.Uid
+		} else {
+			check = uint32(ix)
 		}
-		for _, msg := range msgs {
+		if seqset.Contains(check) {
 			var newFlags []string
 			switch operation {
 			case imap.SetFlags:
@@ -364,7 +376,6 @@ func StartImap(lg Login, db Database, config *tls.Config) {
 	}
 	s := server.New(be)
 	s.Addr = GetString(ImapAddressKey)
-	s.AllowInsecureAuth = true
 	s.Debug = os.Stdout
 	s.TLSConfig = config
 	go func() {

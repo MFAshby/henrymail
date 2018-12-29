@@ -29,7 +29,7 @@ func TestUserCrud(t *testing.T) {
 	withDb(t, func(t *testing.T, d Database) {
 		email := "hello@blah.com"
 		// CREATE
-		usr, e := d.InsertUser(email, []byte("testing"))
+		usr, e := d.InsertUser(email, []byte("testing"), false)
 		if e != nil {
 			t.Error(e)
 		}
@@ -67,7 +67,7 @@ func TestMessageCrud(t *testing.T) {
 		if e == nil {
 			t.Errorf("Expected error inserting message with no mailbox")
 		}
-		u, _ := d.InsertUser("test@blah.com", []byte("blah"))
+		u, _ := d.InsertUser("test@blah.com", []byte("blah"), false)
 		mbx, _ := d.InsertMailbox("ibx", u.Id)
 		msg, e := d.InsertMessage([]byte("blah"), []string{"one", "two"}, mbx.Id, date)
 		if e != nil {
@@ -121,7 +121,7 @@ func TestMailboxCrud(t *testing.T) {
 			t.Errorf("Expecting error inserting mailbox with no user")
 		}
 
-		usr, _ := d.InsertUser("blah@test.com", []byte("something"))
+		usr, _ := d.InsertUser("blah@test.com", []byte("something"), false)
 		mbx, e := d.InsertMailbox("INBOX", usr.Id)
 		if e != nil {
 			t.Error(e)

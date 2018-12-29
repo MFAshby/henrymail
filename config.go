@@ -23,6 +23,11 @@ const (
 	MaxRecipientsKey   = "MAX_RECIPIENTS"
 	RetryCronSpec      = "RETRY_CRON_SPEC"
 	RetryCount         = "RETRY_COUNT"
+
+	// Admin stuff
+	AdminUsernameKey    = "ADMIN_USERNAME"
+	AdminPasswordKey    = "ADMIN_PASSWORD"
+	DefaultMailboxesKey = "DEFAULT_MAILBOXES"
 )
 
 func SetConfigDefaults() {
@@ -44,6 +49,10 @@ func SetConfigDefaults() {
 	viper.SetDefault(MaxRecipientsKey, 50)
 	viper.SetDefault(RetryCronSpec, "* * * * *") // every minute
 	viper.SetDefault(RetryCount, 3)
+
+	viper.SetDefault(AdminUsernameKey, "admin")
+	viper.SetDefault(AdminPasswordKey, "iloveemail")
+	viper.SetDefault(DefaultMailboxesKey, []string{"INBOX", "Trash", "Sent", "Drafts"})
 }
 
 func GetString(key string) string {
@@ -56,4 +65,8 @@ func GetInt(key string) int {
 
 func GetBool(key string) bool {
 	return viper.GetBool(key)
+}
+
+func GetStringSlice(key string) []string {
+	return viper.GetStringSlice(key)
 }

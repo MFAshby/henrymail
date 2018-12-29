@@ -17,14 +17,13 @@ func main() {
 	StartWebAdmin(login, database, tlsConfig)
 
 	// Test data setup
-	u1, e := login.NewUser("martin@henry-pi.site", "12345")
-	if e == nil {
-		_, _ = database.InsertMailbox("INBOX", u1.Id)
-		_, _ = database.InsertMailbox("Trash", u1.Id)
-		_, _ = database.InsertMailbox("Sent", u1.Id)
-		_, _ = database.InsertMailbox("Drafts", u1.Id)
-	}
+	ConfigureAdmin(login)
 
 	// Wait for exit
 	select {}
+}
+
+func ConfigureAdmin(login Login) {
+	_, _ = login.NewUser(GetString(AdminUsernameKey)+"@"+GetString(DomainKey),
+		GetString(AdminPasswordKey), true)
 }

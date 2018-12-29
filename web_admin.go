@@ -91,7 +91,7 @@ func (wa *wa) delete(w http.ResponseWriter, r *http.Request, u *Usr) {
 func (wa *wa) add(w http.ResponseWriter, r *http.Request, u *Usr) {
 	email := r.FormValue("email")
 	password := r.FormValue("password")
-	_, err := wa.lg.NewUser(email, password)
+	_, err := wa.lg.NewUser(email, password, false)
 	if err != nil {
 		wa.renderError(w, err.Error())
 	} else {
@@ -107,8 +107,11 @@ func (wa *wa) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := wa.lg.Login(email, password); err != nil {
+	if usr, err := wa.lg.Login(email, password); err != nil {
 		wa.renderLogin(w, err.Error())
+		return
+	} else if !usr.Admin {
+		wa.renderLogin(w, "You are not an administrator")
 		return
 	}
 

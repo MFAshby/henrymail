@@ -9,7 +9,7 @@ import (
  */
 type Login interface {
 	Login(email, password string) (*Usr, error)
-	NewUser(email, password string) (*Usr, error)
+	NewUser(email, password string, admin bool) (*Usr, error)
 }
 
 type dbLogin struct {
@@ -32,14 +32,21 @@ func (db dbLogin) Login(email, password string) (*Usr, error) {
 	return user, nil
 }
 
-func (db dbLogin) NewUser(email, password string) (*Usr, error) {
+func (db dbLogin) NewUser(email, password string, admin bool) (*Usr, error) {
 	passwordBytes, e := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if e != nil {
 		return nil, e
 	}
-	usr, e := db.db.InsertUser(email, passwordBytes)
+	usr, e := db.db.InsertUser(email, passwordBytes, admin)
 	if e != nil {
 		return nil, e
+	}
+	defaultMailboxes := GetStringSlice(DefaultMailboxesKey)
+	for _, name := range defaultMailboxes {
+		_, e := db.db.InsertMailbox(name, usr.Id)
+		if e != nil {
+			return nil, e
+		}
 	}
 	return usr, nil
 }

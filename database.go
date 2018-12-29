@@ -12,7 +12,7 @@ import (
 
 // Interface
 type Database interface {
-	InsertUser(email string, passwordBytes []byte) (*Usr, error)
+	InsertUser(email string, passwordBytes []byte, admin bool) (*Usr, error)
 	GetUserAndPassword(email string) (*Usr, []byte, error)
 	GetUsers() ([]*Usr, error)
 	DeleteUser(email string) error
@@ -73,10 +73,16 @@ func (db *sqliteDb) SetMessageFlags(msgId int64, flags []string) error {
 
 func (db *sqliteDb) DeleteMessage(msgId int64) error {
 	_, e := db.db.Exec(`
+			DELETE FROM messageflags
+			WHERE messageid = ?
+		`, msgId)
+	if e != nil {
+		return e
+	}
+	return checkOneRowAffected(db.db.Exec(`
 		DELETE FROM messages
 		WHERE id = ?
-	`, msgId)
-	return e
+	`, msgId))
 }
 
 func (db *sqliteDb) RenameMailbox(userId int64, originalName, newName string) error {
@@ -229,61 +235,67 @@ func (db *sqliteDb) GetMessages(mbxId int64, lowerUid, upperUid int) ([]*Msg, er
 }
 
 func (db *sqliteDb) InsertMessage(content []byte, flags []string, mbxId int64, timestamp time.Time) (*Msg, error) {
-	tx, e := db.db.Begin()
-	if e != nil {
-		return nil, e
-	}
-	defer tx.Rollback()
-
-	var uidNext uint32
-	e = tx.QueryRow(`
-		SELECT uidnext 
-		FROM mailboxes 
-		WHERE id = ?
-	`, mbxId).Scan(&uidNext)
-	if e != nil {
-		return nil, e
-	}
-
 	msg := &Msg{
 		MbxId:     mbxId,
-		Uid:       uidNext,
 		Content:   content,
 		Flags:     flags,
 		Timestamp: timestamp,
 	}
-	res, e := tx.Exec(`
-		INSERT INTO messages (mailboxid, content, uid, ts) 
-		VALUES (?, ?, ?, ?)
-	`, mbxId, content, uidNext, timestamp)
-	if checkErrorsSetId(&msg.HasId, res, e) != nil {
-		return nil, e
-	}
-
-	for _, flag := range flags {
-		_, e := tx.Exec(`
-			INSERT INTO messageflags (messageid, flag) 
-			VALUES (?, ?)
-		`, msg.Id, flag)
+	e := transact(db.db, func(tx *sql.Tx) error {
+		e := tx.QueryRow(`
+			SELECT uidnext 
+			FROM mailboxes 
+			WHERE id = ?
+		`, mbxId).Scan(&msg.Uid)
 		if e != nil {
-			return nil, e
+			return e
 		}
-	}
 
-	_, e = tx.Exec(`
-		UPDATE mailboxes 
-		SET uidnext = ? 
-		WHERE id = ?
-	`, uidNext+1, mbxId)
-	if e != nil {
-		return nil, e
-	}
+		res, e := tx.Exec(`
+			INSERT INTO messages (mailboxid, content, uid, ts) 
+			VALUES (?, ?, ?, ?)
+		`, mbxId, content, msg.Uid, timestamp)
+		if checkErrorsSetId(&msg.HasId, res, e) != nil {
+			return e
+		}
 
-	e = tx.Commit()
-	if e != nil {
-		return nil, e
+		for _, flag := range flags {
+			_, e := tx.Exec(`
+				INSERT INTO messageflags (messageid, flag) 
+				VALUES (?, ?)
+			`, msg.Id, flag)
+			if e != nil {
+				return e
+			}
+		}
+
+		_, e = tx.Exec(`
+			UPDATE mailboxes 
+			SET uidnext = ? 
+			WHERE id = ?
+		`, msg.Uid+1, mbxId)
+		return e
+	})
+	return msg, e
+}
+
+func transact(db *sql.DB, txFunc func(*sql.Tx) error) (err error) {
+	tx, err := db.Begin()
+	if err != nil {
+		return
 	}
-	return msg, nil
+	defer func() {
+		if p := recover(); p != nil {
+			tx.Rollback()
+			panic(p) // re-throw panic after Rollback
+		} else if err != nil {
+			tx.Rollback() // err is non-nil; don't change it
+		} else {
+			err = tx.Commit() // err is nil; if Commit returns error update err
+		}
+	}()
+	err = txFunc(tx)
+	return err
 }
 
 func (db *sqliteDb) InsertMailbox(name string, usrId int64) (*Mbx, error) {
@@ -427,7 +439,7 @@ func (db *sqliteDb) DeleteUser(email string) error {
 
 func (db *sqliteDb) GetUsers() ([]*Usr, error) {
 	rows, e := db.db.Query(`
-		SELECT id, email 
+		SELECT id, email, admin 
 		FROM users
 	`)
 	if e != nil {
@@ -436,7 +448,7 @@ func (db *sqliteDb) GetUsers() ([]*Usr, error) {
 	users := make([]*Usr, 0)
 	for rows.Next() {
 		u := &Usr{}
-		e := rows.Scan(&u.Id, &u.Email)
+		e := rows.Scan(&u.Id, &u.Email, &u.Admin)
 		if e != nil {
 			return nil, e
 		}
@@ -447,13 +459,13 @@ func (db *sqliteDb) GetUsers() ([]*Usr, error) {
 
 func (db *sqliteDb) GetUserAndPassword(email string) (*Usr, []byte, error) {
 	row := db.db.QueryRow(`
-		SELECT id, email, passwordBytes 
+		SELECT id, email, passwordBytes, admin 
 		FROM users 
 		WHERE Email = ?
 	`, email)
 	u := &Usr{}
 	var pw []byte
-	e := row.Scan(&u.Id, &u.Email, &pw)
+	e := row.Scan(&u.Id, &u.Email, &pw, &u.Admin)
 	if e == sql.ErrNoRows {
 		return nil, nil, NotFound
 	}
@@ -466,14 +478,14 @@ func (db *sqliteDb) GetUserAndPassword(email string) (*Usr, []byte, error) {
 	return u, pw, nil
 }
 
-func (db *sqliteDb) InsertUser(email string, passwordBytes []byte) (*Usr, error) {
+func (db *sqliteDb) InsertUser(email string, passwordBytes []byte, admin bool) (*Usr, error) {
 	usr := &Usr{
 		Email: email,
 	}
 	res, e := db.db.Exec(`
-		INSERT INTO users (email, passwordBytes) 
-		VALUES (?, ?)
-	`, email, passwordBytes)
+		INSERT INTO users (email, passwordBytes, admin) 
+		VALUES (?, ?, ?)
+	`, email, passwordBytes, admin)
 	return usr, checkErrorsSetId(&usr.HasId, res, e)
 }
 
@@ -484,16 +496,12 @@ func NewDatabase() Database {
 	}
 	initSql := `
 		PRAGMA foreign_keys = ON;
-		--DROP TABLE IF EXISTS users;
-		--DROP TABLE IF EXISTS mailboxes;
-		--DROP TABLE IF EXISTS messages;
-		--DROP TABLE IF EXISTS messageflags;
-		--DROP TABLE IF EXISTS queue;
 
 		CREATE TABLE IF NOT EXISTS users (
 			id integer primary key,
 			email text, 
-			passwordBytes blob
+			passwordBytes blob,
+			admin bool
 		);
 		CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users (
 			email
