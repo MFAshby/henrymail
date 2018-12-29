@@ -177,15 +177,6 @@ func (m *imb) getAllMessages() ([]*Msg, error) {
 	return m.db.GetMessages(m.mbxId, -1, -1)
 }
 
-/*
-func (m *imb) getSeqMessages(seq imap.Seq) ([]*Msg, error) {
-	stop := -1
-	if seq.Stop != 0 {
-		stop = int(seq.Stop)
-	}
-	return m.db.GetMessages(m.mbxId, int(seq.Start), stop)
-}
-*/
 func (m *Msg) Fetch(seqNum uint32, items []imap.FetchItem) (*imap.Message, error) {
 	fetched := imap.NewMessage(seqNum, items)
 	for _, item := range items {

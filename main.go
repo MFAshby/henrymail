@@ -9,7 +9,7 @@ func main() {
 	sender := NewSender(database)
 
 	msaChain := sender
-	mtaChain := NewSaver(database)
+	mtaChain := NewDkimVerifier(NewSaver(database))
 
 	StartMsa(msaChain, login, tlsConfig)
 	StartMta(mtaChain, tlsConfig)
