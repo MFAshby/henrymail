@@ -56,8 +56,8 @@ func SetConfigDefaults() {
 	viper.SetDefault(UseAutoCertKey, true)
 	viper.SetDefault(AutoCertEmailKey, "martin@ashbysoft.com")
 	viper.SetDefault(AutoCertCacheDir, "keys")
-	viper.SetDefault(CertificateFileKey, "/etc/letsencrypt/live/mfashby.net/fullchaim.pem")
-	viper.SetDefault(KeyFileKey, "/etc/letsencrypt/live/mfashby.net/privkey.pem")
+	viper.SetDefault(CertificateFileKey, "/etc/letsencrypt/live/mail.mfashby.net/fullchaim.pem")
+	viper.SetDefault(KeyFileKey, "/etc/letsencrypt/live/mail.mfashby.net/privkey.pem")
 
 	viper.SetDefault(MaxIdleSecondsKey, 300)
 	viper.SetDefault(MaxMessageBytesKey, 1024*1024) // 1MB
