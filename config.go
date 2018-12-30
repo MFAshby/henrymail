@@ -53,7 +53,7 @@ func SetConfigDefaults() {
 	viper.SetDefault(WebAdminAddressKey, ":2003")
 	viper.SetDefault(WebAdminUseTlsKey, false)
 
-	viper.SetDefault(UseAutoCertKey, true)
+	viper.SetDefault(UseAutoCertKey, false)
 	viper.SetDefault(AutoCertEmailKey, "martin@ashbysoft.com")
 	viper.SetDefault(AutoCertCacheDir, "keys")
 	viper.SetDefault(CertificateFileKey, "/etc/letsencrypt/live/mail.mfashby.net/fullchaim.pem")
