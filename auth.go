@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -10,6 +11,7 @@ import (
 type Login interface {
 	Login(email, password string) (*Usr, error)
 	NewUser(email, password string, admin bool) (*Usr, error)
+	ChangePassword(email, password, password2 string) error
 }
 
 type dbLogin struct {
@@ -49,4 +51,15 @@ func (db dbLogin) NewUser(email, password string, admin bool) (*Usr, error) {
 		}
 	}
 	return usr, nil
+}
+
+func (db dbLogin) ChangePassword(email, password, password2 string) error {
+	if password != password2 {
+		return errors.New("passwords don't match")
+	}
+	passwordBytes, e := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if e != nil {
+		return e
+	}
+	return db.db.SetUserPassword(email, passwordBytes)
 }

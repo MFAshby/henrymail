@@ -3,65 +3,67 @@ package main
 import "github.com/spf13/viper"
 
 const (
-	DomainKey     = "DOMAIN"
-	SqlitePathKey = "DB_PATH"
+	DomainKey     = "Domain"
+	SqlitePathKey = "SqlitePath"
 
 	// Network
-	MsaAddressKey      = "MSA_ADDRESS"
-	MtaAddressKey      = "MTA_ADDRESS"
-	ImapAddressKey     = "IMAP_ADDRESS"
-	WebAdminAddressKey = "WEB_ADMIN_ADDRESS"
+	MsaAddressKey      = "MsaAddress"
+	MtaAddressKey      = "MtaAddres"
+	ImapAddressKey     = "ImapAddress"
+	WebAdminAddressKey = "WebAdminAddress"
+	WebAdminUseTlsKey  = "WebAdminUseTls"
 
 	// TLS
-	UseAutoCertKey     = "USE_AUTO_CERT"
-	AutoCertEmailKey   = "AUTO_CERT_EMAIL"
-	AutoCertCacheDir   = "AUTO_CERT_CACHE_DIR"
-	CertificateFileKey = "CERT_FILE"
-	KeyFileKey         = "KEY_FILE"
+	UseAutoCertKey     = "UseAutoCert"
+	AutoCertEmailKey   = "AutCertEmail"
+	AutoCertCacheDir   = "AuthCertCacheDir"
+	CertificateFileKey = "CertificateFile"
+	KeyFileKey         = "KeyFile"
 
 	// Message sending stuff
-	MaxIdleSecondsKey  = "MAX_IDLE_SECONDS"
-	MaxMessageBytesKey = "MAX_MESSAGE_BYTES"
-	MaxRecipientsKey   = "MAX_RECIPIENTS"
-	RetryCronSpec      = "RETRY_CRON_SPEC"
-	RetryCount         = "RETRY_COUNT"
+	MaxIdleSecondsKey  = "MaxIdleSeconds"
+	MaxMessageBytesKey = "MaxMessageBytes"
+	MaxRecipientsKey   = "MaxRecipients"
+	RetryCronSpecKey   = "RetryCronSpec"
+	RetryCountKey      = "RetryCount"
 
 	// Admin stuff
-	AdminUsernameKey    = "ADMIN_USERNAME"
-	AdminPasswordKey    = "ADMIN_PASSWORD"
-	DefaultMailboxesKey = "DEFAULT_MAILBOXES"
+	AdminUsernameKey    = "AdminUsername"
+	AdminPasswordKey    = "AdminPassword"
+	DefaultMailboxesKey = "DefaultMailboxes"
 
 	// DKIM
-	DkimPrivateKeyFileKey = "DKIM_PRIVATE_KEY_FILE"
-	DkimPublicKeyFileKey  = "DKIM_PUBLIC_KEY_FILE"
-	DkimKeyBitsKey        = "DKIM_KEY_BITS"
+	DkimPrivateKeyFileKey = "DkimPrivateKeyFile"
+	DkimPublicKeyFileKey  = "DkimPublicKeyFile"
+	DkimKeyBitsKey        = "DkimKeyBits"
 
 	// Web auth tokens
-	JwtTokenSecretFileKey = "JWT_TOKEN_SECRET_FILE"
+	JwtTokenSecretFileKey = "JwtTokenSecretFile"
 
 	// DNS
-	DnsServerKey = "DNS_SERVER"
+	DnsServerKey = "DnsServer"
 )
 
 func SetConfigDefaults() {
-	viper.SetDefault(DomainKey, "henry-pi.site")
+	viper.SetDefault(DomainKey, "mfashby.net")
 	viper.SetDefault(SqlitePathKey, "henrymail.db")
 	viper.SetDefault(MsaAddressKey, ":1587")
 	viper.SetDefault(MtaAddressKey, ":1025")
 	viper.SetDefault(ImapAddressKey, ":1143")
-	viper.SetDefault(WebAdminAddressKey, ":1443")
+	viper.SetDefault(WebAdminAddressKey, ":2003")
+	viper.SetDefault(WebAdminUseTlsKey, false)
 
 	viper.SetDefault(UseAutoCertKey, true)
 	viper.SetDefault(AutoCertEmailKey, "martin@ashbysoft.com")
 	viper.SetDefault(AutoCertCacheDir, "keys")
-	viper.SetDefault(CertificateFileKey, "keys/henry-pi.site.crt")
-	viper.SetDefault(KeyFileKey, "keys/henry-pi.site.key")
+	viper.SetDefault(CertificateFileKey, "/etc/letsencrypt/live/mfashby.net/fullchaim.pem")
+	viper.SetDefault(KeyFileKey, "/etc/letsencrypt/live/mfashby.net/privkey.pem")
 
 	viper.SetDefault(MaxIdleSecondsKey, 300)
 	viper.SetDefault(MaxMessageBytesKey, 1024*1024) // 1MB
 	viper.SetDefault(MaxRecipientsKey, 50)
-	viper.SetDefault(RetryCronSpec, "* * * * *") // every minute
-	viper.SetDefault(RetryCount, 3)
+	viper.SetDefault(RetryCronSpecKey, "* * * * *") // every minute
+	viper.SetDefault(RetryCountKey, 3)
 
 	viper.SetDefault(AdminUsernameKey, "admin")
 	viper.SetDefault(AdminPasswordKey, "iloveemail")

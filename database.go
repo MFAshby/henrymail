@@ -35,12 +35,21 @@ type Database interface {
 	GetQueue() ([]*QueuedMsg, error)
 	IncrementRetries(queueId int64) error
 	DeleteQueue(queueId int64) error
+	SetUserPassword(email string, passwordBytes []byte) error
 }
 
 var NotFound = errors.New("not found")
 
 type sqliteDb struct {
 	db *sql.DB
+}
+
+func (db *sqliteDb) SetUserPassword(email string, passwordBytes []byte) error {
+	return checkOneRowAffected(db.db.Exec(`
+		UPDATE users
+		SET passwordBytes = ?
+		WHERE email = ?
+	`, passwordBytes, email))
 }
 
 func (db *sqliteDb) SetMessageFlags(msgId int64, flags []string) error {

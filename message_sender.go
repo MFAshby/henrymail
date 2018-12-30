@@ -126,7 +126,7 @@ func (s *sender) doRetries() {
 	for _, q := range msgs {
 		err := s.sendTo(q.To, q.From, q.Content)
 		if err != nil {
-			if q.Retries >= GetInt(RetryCount) {
+			if q.Retries >= GetInt(RetryCountKey) {
 				err = s.sendFailureNotification(q.To, q.From, q.Content, q.Retries)
 				if err != nil {
 					log.Println(err)
@@ -205,7 +205,7 @@ func NewSender(db Database) *sender {
 		db: db,
 	}
 	cr := cron.New()
-	err := cr.AddFunc(GetString(RetryCronSpec), sender.doRetries)
+	err := cr.AddFunc(GetString(RetryCronSpecKey), sender.doRetries)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -198,6 +198,17 @@ func (wa *wa) rotateJwt(w http.ResponseWriter, r *http.Request, u *Usr) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
+func (wa *wa) changePassword(w http.ResponseWriter, r *http.Request, u *Usr) {
+	password := r.FormValue("password")
+	password2 := r.FormValue("password2")
+	err := wa.lg.ChangePassword(u.Email, password, password2)
+	if err != nil {
+		wa.renderError(w, err.Error())
+	} else {
+		http.Redirect(w, r, "/", http.StatusFound)
+	}
+}
+
 func StartWebAdmin(lg Login, db Database, config *tls.Config, pk *rsa.PublicKey) {
 	// Generate or read secret for JWT auth
 	jwtSecret, e := ioutil.ReadFile(GetString(JwtTokenSecretFileKey))
@@ -226,18 +237,26 @@ func StartWebAdmin(lg Login, db Database, config *tls.Config, pk *rsa.PublicKey)
 	mux.Handle("/deleteUser", webAdmin.checkAuth(webAdmin.delete))
 	mux.Handle("/addUser", webAdmin.checkAuth(webAdmin.add))
 	mux.Handle("/rotateJwt", webAdmin.checkAuth(webAdmin.rotateJwt))
+	mux.Handle("/changePassword", webAdmin.checkAuth(webAdmin.changePassword))
 	mux.Handle("/", webAdmin.checkAuth(webAdmin.rootGet))
 	server := &http.Server{Addr: GetString(WebAdminAddressKey), Handler: mux}
-	l, e := net.Listen("tcp", server.Addr)
-	if e != nil {
-		log.Fatal(e)
-	}
-	tlsListener := tls.NewListener(l, config)
 
 	go func() {
-		log.Println("Started admin web server at ", server.Addr)
-		if err := server.Serve(tlsListener); err != nil {
-			log.Fatal(err)
+		if GetBool(WebAdminUseTlsKey) {
+			l, e := net.Listen("tcp", server.Addr)
+			if e != nil {
+				log.Fatal(e)
+			}
+			tlsListener := tls.NewListener(l, config)
+			log.Println("Started admin web server using TLS at ", server.Addr)
+			if err := server.Serve(tlsListener); err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			log.Println("Started admin web server WITHOUT TLS at ", server.Addr)
+			if err := server.ListenAndServe(); err != nil {
+				log.Fatal(err)
+			}
 		}
 	}()
 }
