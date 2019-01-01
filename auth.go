@@ -54,8 +54,12 @@ func (db dbLogin) NewUser(email, password string, admin bool) (*Usr, error) {
 }
 
 func (db dbLogin) ChangePassword(email, password, password2 string) error {
+	// TODO password policy
+	if password == "" {
+		return errors.New("You must enter a password")
+	}
 	if password != password2 {
-		return errors.New("passwords don't match")
+		return errors.New("Passwords don't match")
 	}
 	passwordBytes, e := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if e != nil {

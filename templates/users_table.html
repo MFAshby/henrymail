@@ -1,0 +1,30 @@
+{{ define "content" }}
+<div>
+    <h2>Current users</h2>
+    <table>
+        <thead>
+        <tr>
+            <td>Email</td>
+            <td>Delete</td>
+        </tr>
+        </thead>
+        <tbody>
+        {{ range .Users }}
+            <tr>
+                <td>{{.Email}}</td>
+                <td>
+                    <form action="/deleteUser">
+                        <input type="hidden" name="email" value="{{.Email}}">
+                        {{ if eq .Email $.CurrentUser.Email}}
+                            <input disabled type="submit" value="Delete">
+                        {{ else }}
+                            <input type="submit" value="Delete" placeholder="You cannot delete yourself">
+                        {{ end }}
+                    </form>
+                </td>
+            </tr>
+        {{ end }}
+        </tbody>
+    </table>
+</div>
+{{ end }}

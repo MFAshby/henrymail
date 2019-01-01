@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"github.com/emersion/go-dkim"
+	"github.com/emersion/go-message"
 	"time"
 )
 
@@ -33,6 +35,26 @@ type Msg struct {
 	Uid       uint32
 	Flags     []string
 	Timestamp time.Time
+}
+
+func (m *Msg) Entity() (*message.Entity, error) {
+	return message.Read(bytes.NewReader(m.Content))
+}
+
+func (m *Msg) Subject() string {
+	entity, e := m.Entity()
+	if e != nil {
+		return e.Error()
+	}
+	return entity.Header.Get("Subject")
+}
+
+func (m *Msg) From() string {
+	entity, e := m.Entity()
+	if e != nil {
+		return e.Error()
+	}
+	return entity.Header.Get("From")
 }
 
 type MsgProcessor interface {

@@ -1,0 +1,27 @@
+{{ define "content" }}
+<table>
+    <thead>
+        <tr>
+            <td>From</td>
+            <td>Subject</td>
+        </tr>
+    </thead>
+    <tbody>
+        {{ range .Messages }}
+        <tr>
+            <td>
+                {{ .From }}
+            </td>
+            <td>
+                {{ .Subject }}
+            </td>
+        </tr>
+        {{ end }}
+    </tbody>
+    <tfoot>
+        <tr>
+            <td colspan="2">{{ len .Messages }} messages</td>
+        </tr>
+    </tfoot>
+</table>
+{{ end }}

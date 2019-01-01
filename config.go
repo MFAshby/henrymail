@@ -59,6 +59,7 @@ const (
 
 	// Web auth tokens
 	JwtTokenSecretFileKey = "JwtTokenSecretFile"
+	JwtCookieNameKey      = "JwtCookieName"
 )
 
 func SetupConfig() {
@@ -93,6 +94,7 @@ func SetupConfig() {
 	viper.SetDefault(DkimKeyBitsKey, 2048)
 
 	viper.SetDefault(JwtTokenSecretFileKey, "keys/jwt-secret")
+	viper.SetDefault(JwtCookieNameKey, "henrymail_jwt_token")
 
 	viper.SetDefault(DnsServerKey, "8.8.8.8:53")
 

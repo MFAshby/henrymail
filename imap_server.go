@@ -225,10 +225,6 @@ func (m *Msg) Match(seqNum uint32, c *imap.SearchCriteria) (bool, error) {
 	return backendutil.Match(e, c)
 }
 
-func (m *Msg) Entity() (*message.Entity, error) {
-	return message.Read(bytes.NewReader(m.Content))
-}
-
 func (m *imb) SearchMessages(uid bool, criteria *imap.SearchCriteria) ([]uint32, error) {
 	if !uid {
 		return nil, errors.New("non-uid not supported in SearchMessages")
