@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/tls"
@@ -10,18 +9,20 @@ import (
 	"encoding/base64"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gorilla/mux"
 	"html/template"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 )
 
 type wa struct {
-	lg        Login
 	tp        *template.Template
+	lg        Login
 	db        Database
 	jwtSecret []byte
 	pk        *rsa.PublicKey
@@ -120,16 +121,15 @@ func (wa *wa) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if usr, err := wa.lg.Login(email, password); err != nil {
+	usr, err := wa.lg.Login(email, password)
+	if err != nil {
 		wa.renderLogin(w, err.Error())
-		return
-	} else if !usr.Admin {
-		wa.renderLogin(w, "You are not an administrator")
 		return
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"email": email,
+		"admin": usr.Admin,
 	})
 	tokenString, err := token.SignedString(wa.jwtSecret)
 	if err != nil {
@@ -140,22 +140,39 @@ func (wa *wa) login(w http.ResponseWriter, r *http.Request) {
 		Name:     jwtCookieName,
 		Value:    tokenString,
 		HttpOnly: true,
-		Secure:   true,
-		Domain:   GetString(DomainKey),
+		//Secure:   true,
+		//Domain:   GetString(DomainKey),
+		Secure: false,
+		Domain: "localhost",
 	})
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func (wa *wa) logout(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
-		Name:    jwtCookieName,
-		Value:   "",
-		Expires: time.Now(),
+		Name:     jwtCookieName,
+		Value:    "bogus",
+		Expires:  time.Now(),
+		HttpOnly: true,
+		//Secure:   true,
+		//Domain:   GetSool(WebAdminUseTlsKey),
+		Secure: false,
+		Domain: "localhost",
 	})
-	http.Redirect(w, r, "/login", http.StatusFound)
+	w.WriteHeader(200)
 }
 
-func (wa *wa) checkAuth(next AuthenticatedHandler) http.Handler {
+func (wa *wa) checkAdmin(next AuthenticatedHandler) http.Handler {
+	return wa.checkLogin(func(w http.ResponseWriter, r *http.Request, user *Usr) {
+		if !user.Admin {
+			wa.renderError(w, "You are not an administrator")
+			return
+		}
+		next(w, r, user)
+	})
+}
+
+func (wa *wa) checkLogin(next AuthenticatedHandler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, e := r.Cookie(jwtCookieName)
 		if e == http.ErrNoCookie {
@@ -188,7 +205,15 @@ func (wa *wa) checkAuth(next AuthenticatedHandler) http.Handler {
 			http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
 			return
 		}
-		user := &Usr{Email: email}
+		admin, ok := claims["admin"].(bool)
+		if !ok || !admin {
+			http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
+			return
+		}
+		user := &Usr{
+			Email: email,
+			Admin: admin,
+		}
 		next(w, r, user)
 	})
 }
@@ -218,11 +243,20 @@ func StartWebAdmin(lg Login, db Database, config *tls.Config, pk *rsa.PublicKey)
 		log.Fatal(e)
 	}
 
-	// TODO bundle these into the binary for release builds?
-	tp := template.Must(template.New("html").
-		ParseFiles("templates/index.html",
-			"templates/login.html",
-			"templates/error.html"))
+	// Read the templates
+	tp := template.New("html")
+	e = filepath.Walk("templates", func(path string, info os.FileInfo, err error) error {
+		if !info.IsDir() {
+			_, err = tp.ParseFiles(path)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if e != nil {
+		log.Fatal(e)
+	}
 
 	webAdmin := wa{
 		lg:        lg,
@@ -231,15 +265,19 @@ func StartWebAdmin(lg Login, db Database, config *tls.Config, pk *rsa.PublicKey)
 		jwtSecret: jwtSecret,
 		pk:        pk,
 	}
-	mux := http.NewServeMux()
-	mux.HandleFunc("/login", webAdmin.login)
-	mux.HandleFunc("/logout", webAdmin.logout)
-	mux.Handle("/deleteUser", webAdmin.checkAuth(webAdmin.delete))
-	mux.Handle("/addUser", webAdmin.checkAuth(webAdmin.add))
-	mux.Handle("/rotateJwt", webAdmin.checkAuth(webAdmin.rotateJwt))
-	mux.Handle("/changePassword", webAdmin.checkAuth(webAdmin.changePassword))
-	mux.Handle("/", webAdmin.checkAuth(webAdmin.rootGet))
-	server := &http.Server{Addr: GetString(WebAdminAddressKey), Handler: mux}
+	//mux := http.NewServeMux()
+	router := mux.NewRouter()
+	router.HandleFunc("/login", webAdmin.login)
+	router.HandleFunc("/logout", webAdmin.logout)
+	router.Handle("/changePassword", webAdmin.checkLogin(webAdmin.changePassword))
+	router.Handle("/", webAdmin.checkLogin(webAdmin.rootGet))
+
+	admin := router.PathPrefix("/admin/").Subrouter()
+	admin.Handle("/addUser", webAdmin.checkAdmin(webAdmin.add))
+	admin.Handle("/deleteUser", webAdmin.checkAdmin(webAdmin.delete))
+	admin.Handle("/rotateJwt", webAdmin.checkAdmin(webAdmin.rotateJwt))
+
+	server := &http.Server{Addr: GetString(WebAdminAddressKey), Handler: router}
 
 	go func() {
 		if GetBool(WebAdminUseTlsKey) {
@@ -274,18 +312,8 @@ func generateAndSaveJwtSecret() []byte {
 	return jwtSecret
 }
 
-func Resolver() *net.Resolver {
-	return &net.Resolver{
-		PreferGo: true,
-		Dial: func(ctx context.Context, network, address string) (conn net.Conn, e error) {
-			d := net.Dialer{}
-			return d.DialContext(ctx, "udp", GetString(DnsServerKey))
-		},
-	}
-}
-
 func (wa *wa) runHealthChecks() HealthChecksViewModel {
-	txtRecords, _ := Resolver().LookupTXT(context.Background(), "mx._domainkey."+GetString(DomainKey))
+	txtRecords, _ := net.LookupTXT("mx._domainkey." + GetString(DomainKey))
 	actual := ""
 	if len(txtRecords) > 0 {
 		actual = txtRecords[0]

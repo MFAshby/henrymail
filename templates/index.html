@@ -4,8 +4,14 @@
         <title>Henrymail</title>
     </head>
     <body>
+        <nav>
+            <ul>
+                <li><a href="/admin">admin</a></li>
+                <li></li>
+            </ul>
+        </nav>
         <div>
-            <h1>Admin interface for {{ .CurrentUser.Email }}</h1>
+            <h1>henrymail for {{ .CurrentUser.Email }}</h1>
             <form action="/logout">
                 <input type="submit" value="Log out">
             </form>

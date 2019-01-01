@@ -40,11 +40,11 @@ type Database interface {
 
 var NotFound = errors.New("not found")
 
-type sqliteDb struct {
+type sqlDb struct {
 	db *sql.DB
 }
 
-func (db *sqliteDb) SetUserPassword(email string, passwordBytes []byte) error {
+func (db *sqlDb) SetUserPassword(email string, passwordBytes []byte) error {
 	return checkOneRowAffected(db.db.Exec(`
 		UPDATE users
 		SET passwordBytes = ?
@@ -52,7 +52,7 @@ func (db *sqliteDb) SetUserPassword(email string, passwordBytes []byte) error {
 	`, passwordBytes, email))
 }
 
-func (db *sqliteDb) SetMessageFlags(msgId int64, flags []string) error {
+func (db *sqlDb) SetMessageFlags(msgId int64, flags []string) error {
 	tx, e := db.db.Begin()
 	if e != nil {
 		return e
@@ -80,7 +80,7 @@ func (db *sqliteDb) SetMessageFlags(msgId int64, flags []string) error {
 	return tx.Commit()
 }
 
-func (db *sqliteDb) DeleteMessage(msgId int64) error {
+func (db *sqlDb) DeleteMessage(msgId int64) error {
 	_, e := db.db.Exec(`
 			DELETE FROM messageflags
 			WHERE messageid = ?
@@ -94,7 +94,7 @@ func (db *sqliteDb) DeleteMessage(msgId int64) error {
 	`, msgId))
 }
 
-func (db *sqliteDb) RenameMailbox(userId int64, originalName, newName string) error {
+func (db *sqlDb) RenameMailbox(userId int64, originalName, newName string) error {
 	return checkOneRowAffected(db.db.Exec(`
 		UPDATE mailboxes
 		SET name = ?
@@ -103,7 +103,7 @@ func (db *sqliteDb) RenameMailbox(userId int64, originalName, newName string) er
 	`, newName, userId, originalName))
 }
 
-func (db *sqliteDb) SetMailboxSubscribed(mbxId int64, subscribed bool) error {
+func (db *sqlDb) SetMailboxSubscribed(mbxId int64, subscribed bool) error {
 	return checkOneRowAffected(db.db.Exec(`
 		UPDATE mailboxes
 		SET subscribed = ?
@@ -111,14 +111,14 @@ func (db *sqliteDb) SetMailboxSubscribed(mbxId int64, subscribed bool) error {
 	`, subscribed, mbxId))
 }
 
-func (db *sqliteDb) DeleteQueue(queueId int64) error {
+func (db *sqlDb) DeleteQueue(queueId int64) error {
 	return checkOneRowAffected(db.db.Exec(`
 		DELETE FROM queue 
 		WHERE id = ?
 		`, queueId))
 }
 
-func (db *sqliteDb) IncrementRetries(queueId int64) error {
+func (db *sqlDb) IncrementRetries(queueId int64) error {
 	return checkOneRowAffected(db.db.Exec(`
 		UPDATE queue
 	  	SET retries = retries + 1
@@ -126,7 +126,7 @@ func (db *sqliteDb) IncrementRetries(queueId int64) error {
 		`, queueId))
 }
 
-func (db *sqliteDb) GetQueue() ([]*QueuedMsg, error) {
+func (db *sqlDb) GetQueue() ([]*QueuedMsg, error) {
 	rows, e := db.db.Query(`
 		SELECT id, msgfrom, msgto, ts, content, retries
 		FROM queue
@@ -158,7 +158,7 @@ func checkErrorsSetId(o *HasId, r sql.Result, e error) error {
 	return nil
 }
 
-func (db *sqliteDb) InsertQueue(from, to string, content []byte, timestamp time.Time) (*QueuedMsg, error) {
+func (db *sqlDb) InsertQueue(from, to string, content []byte, timestamp time.Time) (*QueuedMsg, error) {
 	msg := &QueuedMsg{
 		To:        to,
 		From:      from,
@@ -173,7 +173,7 @@ func (db *sqliteDb) InsertQueue(from, to string, content []byte, timestamp time.
 	return msg, checkErrorsSetId(&msg.HasId, r, e)
 }
 
-func (db *sqliteDb) GetInboxId(email string) (int64, error) {
+func (db *sqlDb) GetInboxId(email string) (int64, error) {
 	var ibxId int64
 	e := db.db.QueryRow(`
 		SELECT mbx.id 
@@ -187,7 +187,7 @@ func (db *sqliteDb) GetInboxId(email string) (int64, error) {
 	return ibxId, e
 }
 
-func (db *sqliteDb) GetMessages(mbxId int64, lowerUid, upperUid int) ([]*Msg, error) {
+func (db *sqlDb) GetMessages(mbxId int64, lowerUid, upperUid int) ([]*Msg, error) {
 	var params []interface{}
 	sb := strings.Builder{}
 	sb.WriteString(`
@@ -243,7 +243,7 @@ func (db *sqliteDb) GetMessages(mbxId int64, lowerUid, upperUid int) ([]*Msg, er
 	return msgs, nil
 }
 
-func (db *sqliteDb) InsertMessage(content []byte, flags []string, mbxId int64, timestamp time.Time) (*Msg, error) {
+func (db *sqlDb) InsertMessage(content []byte, flags []string, mbxId int64, timestamp time.Time) (*Msg, error) {
 	msg := &Msg{
 		MbxId:     mbxId,
 		Content:   content,
@@ -307,7 +307,7 @@ func transact(db *sql.DB, txFunc func(*sql.Tx) error) (err error) {
 	return err
 }
 
-func (db *sqliteDb) InsertMailbox(name string, usrId int64) (*Mbx, error) {
+func (db *sqlDb) InsertMailbox(name string, usrId int64) (*Mbx, error) {
 	mbx := &Mbx{
 		Name:        name,
 		UserId:      usrId,
@@ -321,7 +321,7 @@ func (db *sqliteDb) InsertMailbox(name string, usrId int64) (*Mbx, error) {
 	return mbx, checkErrorsSetId(&mbx.HasId, res, e)
 }
 
-func (db *sqliteDb) GetMailboxes(subscribed bool, usrId int64) ([]*Mbx, error) {
+func (db *sqlDb) GetMailboxes(subscribed bool, usrId int64) ([]*Mbx, error) {
 	sq := new(strings.Builder)
 	var params []interface{}
 	sq.WriteString(`
@@ -351,7 +351,7 @@ func (db *sqliteDb) GetMailboxes(subscribed bool, usrId int64) ([]*Mbx, error) {
 	return mbxs, nil
 }
 
-func (db *sqliteDb) GetMailboxById(id int64) (*Mbx, error) {
+func (db *sqlDb) GetMailboxById(id int64) (*Mbx, error) {
 	row := db.db.QueryRow(`
 		SELECT id, userid, name, uidnext, uidvalidity 
 		FROM mailboxes 
@@ -360,7 +360,7 @@ func (db *sqliteDb) GetMailboxById(id int64) (*Mbx, error) {
 	return db.readMailbox(row)
 }
 
-func (db *sqliteDb) GetMailboxByName(name string, usrId int64) (*Mbx, error) {
+func (db *sqlDb) GetMailboxByName(name string, usrId int64) (*Mbx, error) {
 	row := db.db.QueryRow(`
 		SELECT id, userid, name, uidnext, uidvalidity 
 		FROM mailboxes 
@@ -370,7 +370,7 @@ func (db *sqliteDb) GetMailboxByName(name string, usrId int64) (*Mbx, error) {
 	return db.readMailbox(row)
 }
 
-func (db *sqliteDb) readMailbox(row *sql.Row) (*Mbx, error) {
+func (db *sqlDb) readMailbox(row *sql.Row) (*Mbx, error) {
 	mbx := &Mbx{}
 	e := row.Scan(&mbx.Id, &mbx.UserId, &mbx.Name, &mbx.UidNext, &mbx.UidValidity)
 	if e == sql.ErrNoRows {
@@ -431,7 +431,7 @@ func checkOneRowAffected(r sql.Result, e error) error {
 	return nil
 }
 
-func (db *sqliteDb) DeleteMailbox(name string, usrId int64) error {
+func (db *sqlDb) DeleteMailbox(name string, usrId int64) error {
 	return checkOneRowAffected(db.db.Exec(`
 		DELETE FROM mailboxes 
 		WHERE name = ? 
@@ -439,14 +439,14 @@ func (db *sqliteDb) DeleteMailbox(name string, usrId int64) error {
 	`, name, usrId))
 }
 
-func (db *sqliteDb) DeleteUser(email string) error {
+func (db *sqlDb) DeleteUser(email string) error {
 	return checkOneRowAffected(db.db.Exec(`
 		DELETE FROM users 
 		WHERE email = ?
 	`, email))
 }
 
-func (db *sqliteDb) GetUsers() ([]*Usr, error) {
+func (db *sqlDb) GetUsers() ([]*Usr, error) {
 	rows, e := db.db.Query(`
 		SELECT id, email, admin 
 		FROM users
@@ -466,7 +466,7 @@ func (db *sqliteDb) GetUsers() ([]*Usr, error) {
 	return users, nil
 }
 
-func (db *sqliteDb) GetUserAndPassword(email string) (*Usr, []byte, error) {
+func (db *sqlDb) GetUserAndPassword(email string) (*Usr, []byte, error) {
 	row := db.db.QueryRow(`
 		SELECT id, email, passwordBytes, admin 
 		FROM users 
@@ -487,7 +487,7 @@ func (db *sqliteDb) GetUserAndPassword(email string) (*Usr, []byte, error) {
 	return u, pw, nil
 }
 
-func (db *sqliteDb) InsertUser(email string, passwordBytes []byte, admin bool) (*Usr, error) {
+func (db *sqlDb) InsertUser(email string, passwordBytes []byte, admin bool) (*Usr, error) {
 	usr := &Usr{
 		Email: email,
 	}
@@ -499,7 +499,7 @@ func (db *sqliteDb) InsertUser(email string, passwordBytes []byte, admin bool) (
 }
 
 func NewDatabase() Database {
-	db, err := sql.Open("sqlite3", GetString(SqlitePathKey))
+	db, err := sql.Open(GetString(DbDriverNameKey), GetString(DbConnectionStringKey))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -551,5 +551,5 @@ func NewDatabase() Database {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return &sqliteDb{db: db}
+	return &sqlDb{db: db}
 }

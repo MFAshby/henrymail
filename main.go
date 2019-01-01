@@ -1,15 +1,20 @@
 package main
 
+import (
+	"log"
+	"math/rand"
+)
+
 func main() {
-	SetConfigDefaults()
+	SetupConfig()
+	SetupResolver()
 
 	tlsConfig := GetTLSConfig()
 	database := NewDatabase()
 	login := NewLogin(database)
-	sender := NewSender(database)
 
 	pk := GetOrCreateDkim()
-	msaChain := NewDkimSigner(pk, sender)
+	msaChain := NewDkimSigner(pk, NewSender(database))
 	mtaChain := NewDkimVerifier(NewSaver(database))
 
 	StartMsa(msaChain, login, tlsConfig)
@@ -25,6 +30,20 @@ func main() {
 }
 
 func SeedData(login Login) {
-	_, _ = login.NewUser(GetString(AdminUsernameKey)+"@"+GetString(DomainKey),
-		GetString(AdminPasswordKey), true)
+	pw := randSeq(16)
+	usr, err := login.NewUser(GetString(AdminUsernameKey)+"@"+GetString(DomainKey),
+		pw, true)
+	if err == nil {
+		log.Printf("Generated admin user email: %v password %v", usr.Email, pw)
+	}
+}
+
+const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+func randSeq(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
 }
