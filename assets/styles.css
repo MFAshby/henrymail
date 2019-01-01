@@ -1,0 +1,57 @@
+html {
+    background-color: black;
+    color: white;
+    margin-left: 10%;
+    margin-right: 10%;
+}
+
+input {
+    background-color: midnightblue;
+    color: white;
+    display: block;
+}
+
+input[type=submit] {
+    background-color: darkred;
+    color: white;
+}
+
+header h1 {
+    text-align: center;
+}
+
+nav li {
+    display: inline;
+    text-align: center;
+    background-color: midnightblue;
+    padding: 8pt;
+}
+
+nav *:visited {
+    color: white;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+thead, tfoot {
+    font-family: bold, serif;
+    background-color: midnightblue;
+}
+
+table, th, td {
+    border: 1px solid darkgray;
+}
+
+table.fullwidth {
+    width: 100%;
+}
+
+tbody tr:hover {
+    background-color: darkred;
+}
+
+tr:nth-child(even) {
+    background-color: midnightblue;
+}

@@ -1,5 +1,5 @@
 Domain = example.com
-ServerName = localhost
+ServerName = martin-N15-17RD.lan
 MsaAddress = :1587
 MtaAddress = :1025
 ImapAddress = :1143

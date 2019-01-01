@@ -199,9 +199,18 @@ func (wa *wa) rotateJwt(w http.ResponseWriter, r *http.Request, u *Usr) {
 }
 
 func (wa *wa) changePassword(w http.ResponseWriter, r *http.Request, u *Usr) {
+	layoutData, e := wa.layoutData(u)
+	if e != nil {
+		wa.renderError(w, e)
+		return
+	}
 	data := struct {
+		LayoutData
 		Message string
-	}{}
+	}{
+		*layoutData,
+		"",
+	}
 	if r.Method == http.MethodPost {
 		password := r.FormValue("password")
 		password2 := r.FormValue("password2")
@@ -292,6 +301,8 @@ func StartWebAdmin(lg Login, db Database, config *tls.Config, pk *rsa.PublicKey)
 	router.Handle("/changePassword", webAdmin.checkLogin(webAdmin.changePassword))
 	router.Handle("/mailbox/{name}", webAdmin.checkLogin(webAdmin.mailbox))
 	router.Handle("/", webAdmin.checkLogin(webAdmin.root))
+
+	router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))
 
 	admin := router.PathPrefix("/admin/").Subrouter()
 	admin.Handle("/addUser", webAdmin.checkAdmin(webAdmin.add))
