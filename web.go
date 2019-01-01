@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 )
 
@@ -63,6 +64,7 @@ type wa struct {
 	mailboxView        *View
 	errorView          *View
 	changePasswordView *View
+	messageView        *View
 }
 
 type AuthenticatedHandler = func(w http.ResponseWriter, r *http.Request, u *Usr)
@@ -235,27 +237,68 @@ func (wa *wa) layoutData(u *Usr) (*LayoutData, error) {
 	}, nil
 }
 
+func (wa *wa) msgs(name string, u *Usr) (*Mbx, []*Msg, error) {
+	mbx, e := wa.db.GetMailboxByName(name, u.Id)
+	if e != nil {
+		return nil, nil, e
+	}
+	msgs, e := wa.db.GetMessages(mbx.Id, -1, -1)
+	if e != nil {
+		return nil, nil, e
+	}
+	return mbx, msgs, nil
+}
+
 func (wa *wa) mailbox(w http.ResponseWriter, r *http.Request, u *Usr) {
-	mbxName := mux.Vars(r)["name"]
 	ld, e := wa.layoutData(u)
 	if e != nil {
 		wa.renderError(w, e)
 		return
 	}
-	mbx, e := wa.db.GetMailboxByName(mbxName, u.Id)
+	mbx, msgs, e := wa.msgs(mux.Vars(r)["name"], u)
+	data := struct {
+		LayoutData
+		Mailbox  *Mbx
+		Messages []*Msg
+	}{
+		*ld,
+		mbx,
+		msgs,
+	}
+	wa.mailboxView.Render(w, data)
+}
+
+func (wa *wa) message(w http.ResponseWriter, r *http.Request, u *Usr) {
+	ld, e := wa.layoutData(u)
 	if e != nil {
 		wa.renderError(w, e)
 		return
 	}
-	msgs, e := wa.db.GetMessages(mbx.Id, -1, -1)
-	data := struct {
+	name := mux.Vars(r)["name"]
+
+	id, e := strconv.Atoi(mux.Vars(r)["id"])
+	if e != nil {
+		wa.renderError(w, e)
+		return
+	}
+	_, msgs, e := wa.msgs(name, u)
+	if e != nil {
+		wa.renderError(w, e)
+		return
+	}
+	var sel *Msg
+	for _, msg := range msgs {
+		if msg.Id == int64(id) {
+			sel = msg
+		}
+	}
+	wa.messageView.Render(w, struct {
 		LayoutData
-		Messages []*Msg
+		msg *Msg
 	}{
 		*ld,
-		msgs,
-	}
-	wa.mailboxView.Render(w, data)
+		sel,
+	})
 }
 
 func StartWebAdmin(lg Login, db Database, config *tls.Config, pk *rsa.PublicKey) {
@@ -290,6 +333,7 @@ func StartWebAdmin(lg Login, db Database, config *tls.Config, pk *rsa.PublicKey)
 		loginView:          NewView("login.html", "templates/login.html"),
 		mailboxView:        NewView("index.html", "templates/mailbox.html"),
 		changePasswordView: NewView("index.html", "templates/change_password.html"),
+		messageView:        NewView("index.html", "templates/message.html"),
 	}
 
 	if e != nil {
@@ -300,6 +344,7 @@ func StartWebAdmin(lg Login, db Database, config *tls.Config, pk *rsa.PublicKey)
 	router.HandleFunc("/logout", webAdmin.logout)
 	router.Handle("/changePassword", webAdmin.checkLogin(webAdmin.changePassword))
 	router.Handle("/mailbox/{name}", webAdmin.checkLogin(webAdmin.mailbox))
+	router.Handle("/mailbox/{name}/{id}", webAdmin.checkLogin(webAdmin.message))
 	router.Handle("/", webAdmin.checkLogin(webAdmin.root))
 
 	router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))

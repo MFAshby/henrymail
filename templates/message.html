@@ -1,0 +1,10 @@
+{{ define "content" }}
+{{ with .Message }}
+<div class="grid">
+    <span>Subject</span><span>{{.Subject}}</span>
+    <span>From</span><span>{{.From}}</span>
+    <span>To</span><span>{{.To}}</span>
+    <span class="foot-cell">{{.Body}}</span>
+</div>
+{{ end }}
+{{ end }}

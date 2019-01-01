@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"github.com/emersion/go-dkim"
 	"github.com/emersion/go-message"
+	"io/ioutil"
 	"time"
 )
 
@@ -41,20 +42,36 @@ func (m *Msg) Entity() (*message.Entity, error) {
 	return message.Read(bytes.NewReader(m.Content))
 }
 
-func (m *Msg) Subject() string {
+func (m *Msg) headerOrError(header string) string {
 	entity, e := m.Entity()
 	if e != nil {
 		return e.Error()
 	}
-	return entity.Header.Get("Subject")
+	return entity.Header.Get(header)
+}
+
+func (m *Msg) Subject() string {
+	return m.headerOrError("Subject")
 }
 
 func (m *Msg) From() string {
+	return m.headerOrError("From")
+}
+
+func (m *Msg) To() string {
+	return m.headerOrError("To")
+}
+
+func (m *Msg) Body() string {
 	entity, e := m.Entity()
 	if e != nil {
 		return e.Error()
 	}
-	return entity.Header.Get("From")
+	all, e := ioutil.ReadAll(entity.Body)
+	if e != nil {
+		return e.Error()
+	}
+	return string(all)
 }
 
 type MsgProcessor interface {
