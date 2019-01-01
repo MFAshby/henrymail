@@ -8,19 +8,32 @@ import (
 )
 
 const (
+	// The domain we're serving email for (e.g. example.com)
 	DomainKey = "Domain"
 
 	// Network
+	// The public name of this server (e.g. mail.example.com)
+	ServerNameKey = "ServerName"
+	// Ports / addresses to listen on for various services
 	MsaAddressKey      = "MsaAddress"
-	MtaAddressKey      = "MtaAddres"
+	MtaAddressKey      = "MtaAddress"
 	ImapAddressKey     = "ImapAddress"
 	WebAdminAddressKey = "WebAdminAddress"
-	WebAdminUseTlsKey  = "WebAdminUseTls"
+
+	// DNS
+	DnsServerKey = "DnsServer"
 
 	// TLS
-	UseAutoCertKey     = "UseAutoCert"
-	AutoCertEmailKey   = "AutCertEmail"
-	AutoCertCacheDir   = "AuthCertCacheDir"
+	MtaUseTlsKey      = "MtaUseTls"
+	MsaUseTlsKey      = "MsaUseTls"
+	ImapUseTlsKey     = "ImapUseTls"
+	WebAdminUseTlsKey = "WebAdminUseTls"
+
+	UseAutoCertKey = "UseAutoCert"
+	// If autocert is enabled
+	AutoCertEmailKey = "AutoCertEmail"
+	AutoCertCacheDir = "AutoCertCacheDir"
+	// If autocert is disabled, provide TLS certs
 	CertificateFileKey = "CertificateFile"
 	KeyFileKey         = "KeyFile"
 
@@ -46,9 +59,6 @@ const (
 
 	// Web auth tokens
 	JwtTokenSecretFileKey = "JwtTokenSecretFile"
-
-	// DNS
-	DnsServerKey = "DnsServer"
 )
 
 func SetupConfig() {

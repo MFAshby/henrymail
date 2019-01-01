@@ -21,10 +21,11 @@ func StartMsa(proc MsgProcessor, lg Login, config *tls.Config) {
 	}
 	s := smtp.NewServer(be)
 	s.Addr = GetString(MsaAddressKey)
-	s.Domain = GetString(DomainKey)
+	s.Domain = GetString(ServerNameKey)
 	s.MaxIdleSeconds = GetInt(MaxIdleSecondsKey)
 	s.MaxMessageBytes = GetInt(MaxMessageBytesKey)
 	s.MaxRecipients = GetInt(MaxRecipientsKey)
+	s.AllowInsecureAuth = !GetBool(MsaUseTlsKey)
 	s.Debug = os.Stdout
 	s.TLSConfig = config
 	go func() {

@@ -20,7 +20,7 @@ func StartMta(proc MsgProcessor, config *tls.Config) {
 	}
 	s := smtp.NewServer(b)
 	s.Addr = GetString(MtaAddressKey)
-	s.Domain = GetString(DomainKey)
+	s.Domain = GetString(ServerNameKey)
 	s.MaxIdleSeconds = GetInt(MaxIdleSecondsKey)
 	s.MaxMessageBytes = GetInt(MaxMessageBytesKey)
 	s.MaxRecipients = GetInt(MaxRecipientsKey)

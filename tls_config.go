@@ -7,11 +7,19 @@ import (
 )
 
 func GetTLSConfig() *tls.Config {
+	// Don't try to use TLS if nothing requires it
+	if !GetBool(WebAdminUseTlsKey) &&
+		!GetBool(MsaUseTlsKey) &&
+		!GetBool(MtaUseTlsKey) &&
+		!GetBool(ImapUseTlsKey) {
+		return nil
+	}
+
 	if GetBool(UseAutoCertKey) {
 		m := &autocert.Manager{
 			Cache:      autocert.DirCache("keys"),
 			Prompt:     autocert.AcceptTOS,
-			HostPolicy: autocert.HostWhitelist(GetString(DomainKey)),
+			HostPolicy: autocert.HostWhitelist(GetString(ServerNameKey)),
 			Email:      GetString(AutoCertEmailKey),
 		}
 		return m.TLSConfig()
