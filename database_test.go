@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/spf13/viper"
-	"os"
 	"testing"
 	"time"
 )
@@ -11,18 +10,10 @@ import (
 var date = time.Date(2018, 12, 1, 0, 0, 0, 0, time.UTC)
 
 func withDb(t *testing.T, f func(t *testing.T, d Database)) {
-	testDbName := "testing.db"
-	e := os.Remove(testDbName)
-	if e != nil && !os.IsNotExist(e) {
-		t.Fatal(e)
-	}
-	viper.SetDefault(SqlitePathKey, testDbName)
+	viper.Set(DbConnectionStringKey, "file::memory:?mode=memory&cache=shared")
+	viper.Set(DbDriverNameKey, "sqlite3")
 	database := NewDatabase()
 	f(t, database)
-	e = os.Remove(testDbName)
-	if e != nil {
-		t.Fatal(e)
-	}
 }
 
 func TestUserCrud(t *testing.T) {
@@ -269,7 +260,3 @@ func TestQueueCrud(t *testing.T) {
 		}
 	})
 }
-
-/*
-	DeleteQueue(queueId int64) error
-*/

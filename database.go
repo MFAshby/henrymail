@@ -7,6 +7,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -41,10 +42,13 @@ type Database interface {
 var NotFound = errors.New("not found")
 
 type sqlDb struct {
-	db *sql.DB
+	db  *sql.DB
+	mut *sync.RWMutex
 }
 
 func (db *sqlDb) SetUserPassword(email string, passwordBytes []byte) error {
+	db.mut.Lock()
+	defer db.mut.Unlock()
 	return checkOneRowAffected(db.db.Exec(`
 		UPDATE users
 		SET passwordBytes = ?
@@ -53,6 +57,8 @@ func (db *sqlDb) SetUserPassword(email string, passwordBytes []byte) error {
 }
 
 func (db *sqlDb) SetMessageFlags(msgId int64, flags []string) error {
+	db.mut.Lock()
+	defer db.mut.Unlock()
 	tx, e := db.db.Begin()
 	if e != nil {
 		return e
@@ -81,6 +87,8 @@ func (db *sqlDb) SetMessageFlags(msgId int64, flags []string) error {
 }
 
 func (db *sqlDb) DeleteMessage(msgId int64) error {
+	db.mut.Lock()
+	defer db.mut.Unlock()
 	_, e := db.db.Exec(`
 			DELETE FROM messageflags
 			WHERE messageid = ?
@@ -95,6 +103,8 @@ func (db *sqlDb) DeleteMessage(msgId int64) error {
 }
 
 func (db *sqlDb) RenameMailbox(userId int64, originalName, newName string) error {
+	db.mut.Lock()
+	defer db.mut.Unlock()
 	return checkOneRowAffected(db.db.Exec(`
 		UPDATE mailboxes
 		SET name = ?
@@ -104,6 +114,8 @@ func (db *sqlDb) RenameMailbox(userId int64, originalName, newName string) error
 }
 
 func (db *sqlDb) SetMailboxSubscribed(mbxId int64, subscribed bool) error {
+	db.mut.Lock()
+	defer db.mut.Unlock()
 	return checkOneRowAffected(db.db.Exec(`
 		UPDATE mailboxes
 		SET subscribed = ?
@@ -112,6 +124,8 @@ func (db *sqlDb) SetMailboxSubscribed(mbxId int64, subscribed bool) error {
 }
 
 func (db *sqlDb) DeleteQueue(queueId int64) error {
+	db.mut.Lock()
+	defer db.mut.Unlock()
 	return checkOneRowAffected(db.db.Exec(`
 		DELETE FROM queue 
 		WHERE id = ?
@@ -119,6 +133,8 @@ func (db *sqlDb) DeleteQueue(queueId int64) error {
 }
 
 func (db *sqlDb) IncrementRetries(queueId int64) error {
+	db.mut.Lock()
+	defer db.mut.Unlock()
 	return checkOneRowAffected(db.db.Exec(`
 		UPDATE queue
 	  	SET retries = retries + 1
@@ -127,6 +143,8 @@ func (db *sqlDb) IncrementRetries(queueId int64) error {
 }
 
 func (db *sqlDb) GetQueue() ([]*QueuedMsg, error) {
+	db.mut.RLock()
+	defer db.mut.RUnlock()
 	rows, e := db.db.Query(`
 		SELECT id, msgfrom, msgto, ts, content, retries
 		FROM queue
@@ -159,6 +177,8 @@ func checkErrorsSetId(o *HasId, r sql.Result, e error) error {
 }
 
 func (db *sqlDb) InsertQueue(from, to string, content []byte, timestamp time.Time) (*QueuedMsg, error) {
+	db.mut.Lock()
+	defer db.mut.Unlock()
 	msg := &QueuedMsg{
 		To:        to,
 		From:      from,
@@ -174,6 +194,8 @@ func (db *sqlDb) InsertQueue(from, to string, content []byte, timestamp time.Tim
 }
 
 func (db *sqlDb) GetInboxId(email string) (int64, error) {
+	db.mut.RLock()
+	defer db.mut.RUnlock()
 	var ibxId int64
 	e := db.db.QueryRow(`
 		SELECT mbx.id 
@@ -188,6 +210,8 @@ func (db *sqlDb) GetInboxId(email string) (int64, error) {
 }
 
 func (db *sqlDb) GetMessages(mbxId int64, lowerUid, upperUid int) ([]*Msg, error) {
+	db.mut.RLock()
+	defer db.mut.RUnlock()
 	var params []interface{}
 	sb := strings.Builder{}
 	sb.WriteString(`
@@ -244,6 +268,8 @@ func (db *sqlDb) GetMessages(mbxId int64, lowerUid, upperUid int) ([]*Msg, error
 }
 
 func (db *sqlDb) InsertMessage(content []byte, flags []string, mbxId int64, timestamp time.Time) (*Msg, error) {
+	db.mut.Lock()
+	defer db.mut.Unlock()
 	msg := &Msg{
 		MbxId:     mbxId,
 		Content:   content,
@@ -308,6 +334,8 @@ func transact(db *sql.DB, txFunc func(*sql.Tx) error) (err error) {
 }
 
 func (db *sqlDb) InsertMailbox(name string, usrId int64) (*Mbx, error) {
+	db.mut.Lock()
+	defer db.mut.Unlock()
 	mbx := &Mbx{
 		Name:        name,
 		UserId:      usrId,
@@ -322,6 +350,8 @@ func (db *sqlDb) InsertMailbox(name string, usrId int64) (*Mbx, error) {
 }
 
 func (db *sqlDb) GetMailboxes(subscribed bool, usrId int64) ([]*Mbx, error) {
+	db.mut.RLock()
+	defer db.mut.RUnlock()
 	sq := new(strings.Builder)
 	var params []interface{}
 	sq.WriteString(`
@@ -352,6 +382,8 @@ func (db *sqlDb) GetMailboxes(subscribed bool, usrId int64) ([]*Mbx, error) {
 }
 
 func (db *sqlDb) GetMailboxById(id int64) (*Mbx, error) {
+	db.mut.RLock()
+	defer db.mut.RUnlock()
 	row := db.db.QueryRow(`
 		SELECT id, userid, name, uidnext, uidvalidity 
 		FROM mailboxes 
@@ -361,6 +393,8 @@ func (db *sqlDb) GetMailboxById(id int64) (*Mbx, error) {
 }
 
 func (db *sqlDb) GetMailboxByName(name string, usrId int64) (*Mbx, error) {
+	db.mut.RLock()
+	defer db.mut.RUnlock()
 	row := db.db.QueryRow(`
 		SELECT id, userid, name, uidnext, uidvalidity 
 		FROM mailboxes 
@@ -432,6 +466,8 @@ func checkOneRowAffected(r sql.Result, e error) error {
 }
 
 func (db *sqlDb) DeleteMailbox(name string, usrId int64) error {
+	db.mut.Lock()
+	defer db.mut.Unlock()
 	return checkOneRowAffected(db.db.Exec(`
 		DELETE FROM mailboxes 
 		WHERE name = ? 
@@ -440,6 +476,8 @@ func (db *sqlDb) DeleteMailbox(name string, usrId int64) error {
 }
 
 func (db *sqlDb) DeleteUser(email string) error {
+	db.mut.Lock()
+	defer db.mut.Unlock()
 	return checkOneRowAffected(db.db.Exec(`
 		DELETE FROM users 
 		WHERE email = ?
@@ -447,6 +485,8 @@ func (db *sqlDb) DeleteUser(email string) error {
 }
 
 func (db *sqlDb) GetUsers() ([]*Usr, error) {
+	db.mut.RLock()
+	defer db.mut.RUnlock()
 	rows, e := db.db.Query(`
 		SELECT id, email, admin 
 		FROM users
@@ -467,6 +507,8 @@ func (db *sqlDb) GetUsers() ([]*Usr, error) {
 }
 
 func (db *sqlDb) GetUserAndPassword(email string) (*Usr, []byte, error) {
+	db.mut.RLock()
+	defer db.mut.RUnlock()
 	row := db.db.QueryRow(`
 		SELECT id, email, passwordBytes, admin 
 		FROM users 
@@ -488,6 +530,8 @@ func (db *sqlDb) GetUserAndPassword(email string) (*Usr, []byte, error) {
 }
 
 func (db *sqlDb) InsertUser(email string, passwordBytes []byte, admin bool) (*Usr, error) {
+	db.mut.Lock()
+	defer db.mut.Unlock()
 	usr := &Usr{
 		Email: email,
 	}
@@ -551,5 +595,8 @@ func NewDatabase() Database {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return &sqlDb{db: db}
+	return &sqlDb{
+		db:  db,
+		mut: new(sync.RWMutex),
+	}
 }
