@@ -1,9 +1,9 @@
 {{ define "content" }}
 {{ with .Message }}
 <div class="grid">
-    <span>Subject</span><span>{{.Subject}}</span>
-    <span>From</span><span>{{.From}}</span>
-    <span>To</span><span>{{.To}}</span>
+    <div class="row head"><span>Subject</span><span>{{.Subject}}</span></div>
+    <div class="row head"><span>From</span><span>{{.From}}</span></div>
+    <div class="row head"><span>To</span><span>{{.To}}</span></div>
     <span class="foot-cell">{{.Body}}</span>
 </div>
 {{ end }}

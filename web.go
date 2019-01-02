@@ -294,7 +294,7 @@ func (wa *wa) message(w http.ResponseWriter, r *http.Request, u *Usr) {
 	}
 	wa.messageView.Render(w, struct {
 		LayoutData
-		msg *Msg
+		Message *Msg
 	}{
 		*ld,
 		sel,
