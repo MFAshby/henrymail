@@ -1,0 +1,4 @@
+Domain = example.com
+ServerName = mail.example.com
+AutoCertEmail = admin@example.com
+AdminUsername = admin
