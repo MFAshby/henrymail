@@ -8,23 +8,23 @@ import (
 
 func GetTLSConfig() *tls.Config {
 	// Don't try to use TLS if nothing requires it
-	if !GetBool(WebAdminUseTlsKey) &&
-		!GetBool(MsaUseTlsKey) &&
-		!GetBool(MtaUseTlsKey) &&
-		!GetBool(ImapUseTlsKey) {
+	if !GetBool(WebAdminUseTls) &&
+		!GetBool(MsaUseTls) &&
+		!GetBool(MtaUseTls) &&
+		!GetBool(ImapUseTls) {
 		return nil
 	}
 
-	if GetBool(UseAutoCertKey) {
+	if GetBool(UseAutoCert) {
 		m := &autocert.Manager{
 			Cache:      autocert.DirCache("keys"),
 			Prompt:     autocert.AcceptTOS,
-			HostPolicy: autocert.HostWhitelist(GetString(ServerNameKey)),
-			Email:      GetString(AutoCertEmailKey),
+			HostPolicy: autocert.HostWhitelist(GetString(ServerName)),
+			Email:      GetString(AutoCertEmail),
 		}
 		return m.TLSConfig()
 	} else {
-		c, e := tls.LoadX509KeyPair(GetString(CertificateFileKey), GetString(KeyFileKey))
+		c, e := tls.LoadX509KeyPair(GetString(CertificateFile), GetString(KeyFile))
 		if e != nil {
 			log.Fatal(e)
 		}

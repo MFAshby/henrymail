@@ -86,7 +86,7 @@ func (s *sender) sendToHost(to, from, host string, content []byte) error {
 	if err != nil {
 		return err
 	}
-	err = client.Hello(config.GetString(config.ServerNameKey))
+	err = client.Hello(config.GetString(config.ServerName))
 	if err != nil {
 		return err
 	}
@@ -129,7 +129,7 @@ func (s *sender) doRetries() {
 	for _, q := range msgs {
 		err := s.sendTo(q.To, q.From, q.Content)
 		if err != nil {
-			if q.Retries >= config.GetInt(config.RetryCountKey) {
+			if q.Retries >= config.GetInt(config.RetryCount) {
 				err = s.sendFailureNotification(q.To, q.From, q.Content, q.Retries)
 				if err != nil {
 					log.Println(err)
@@ -208,7 +208,7 @@ func NewSender(db database.Database) *sender {
 		db: db,
 	}
 	cr := cron.New()
-	err := cr.AddFunc(config.GetString(config.RetryCronSpecKey), sender.doRetries)
+	err := cr.AddFunc(config.GetString(config.RetryCronSpec), sender.doRetries)
 	if err != nil {
 		log.Fatal(err)
 	}

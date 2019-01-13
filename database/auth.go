@@ -45,7 +45,7 @@ func (db dbLogin) NewUser(email, password string, admin bool) (*model.Usr, error
 	if e != nil {
 		return nil, e
 	}
-	defaultMailboxes := config.GetStringSlice(config.DefaultMailboxesKey)
+	defaultMailboxes := config.GetStringSlice(config.DefaultMailboxes)
 	for _, name := range defaultMailboxes {
 		_, e := db.db.InsertMailbox(name, usr.Id)
 		if e != nil {

@@ -545,7 +545,7 @@ func (db *sqlDb) InsertUser(email string, passwordBytes []byte, admin bool) (*mo
 }
 
 func NewDatabase() Database {
-	db, err := sql.Open(config.GetString(config.DbDriverNameKey), config.GetString(config.DbConnectionStringKey))
+	db, err := sql.Open(config.GetString(config.DbDriverName), config.GetString(config.DbConnectionString))
 	if err != nil {
 		log.Fatal(err)
 	}

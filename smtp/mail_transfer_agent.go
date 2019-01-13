@@ -23,11 +23,11 @@ func StartMta(proc processors.MsgProcessor, tls *tls.Config) {
 		proc: proc,
 	}
 	s := smtp.NewServer(b)
-	s.Addr = config.GetString(config.MtaAddressKey)
-	s.Domain = config.GetString(config.ServerNameKey)
-	s.MaxIdleSeconds = config.GetInt(config.MaxIdleSecondsKey)
-	s.MaxMessageBytes = config.GetInt(config.MaxMessageBytesKey)
-	s.MaxRecipients = config.GetInt(config.MaxRecipientsKey)
+	s.Addr = config.GetString(config.MtaAddress)
+	s.Domain = config.GetString(config.ServerName)
+	s.MaxIdleSeconds = config.GetInt(config.MaxIdleSeconds)
+	s.MaxMessageBytes = config.GetInt(config.MaxMessageBytes)
+	s.MaxRecipients = config.GetInt(config.MaxRecipients)
 	s.AuthDisabled = true
 	s.Debug = os.Stdout
 	s.TLSConfig = tls

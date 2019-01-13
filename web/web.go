@@ -139,23 +139,23 @@ func (wa *wa) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.SetCookie(w, &http.Cookie{
-		Name:     config.GetString(config.JwtCookieNameKey),
+		Name:     config.GetString(config.JwtCookieName),
 		Value:    tokenString,
 		HttpOnly: true,
-		Secure:   config.GetBool(config.WebAdminUseTlsKey),
-		Domain:   config.GetString(config.ServerNameKey),
+		Secure:   config.GetBool(config.WebAdminUseTls),
+		Domain:   config.GetString(config.ServerName),
 	})
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func (wa *wa) logout(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
-		Name:     config.GetString(config.JwtCookieNameKey),
+		Name:     config.GetString(config.JwtCookieName),
 		Value:    "bogus",
 		Expires:  time.Now(),
 		HttpOnly: true,
-		Secure:   config.GetBool(config.WebAdminUseTlsKey),
-		Domain:   config.GetString(config.ServerNameKey),
+		Secure:   config.GetBool(config.WebAdminUseTls),
+		Domain:   config.GetString(config.ServerName),
 	})
 	wa.loginView.Render(w, nil)
 	w.WriteHeader(200)
@@ -173,7 +173,7 @@ func (wa *wa) checkAdmin(next AuthenticatedHandler) http.Handler {
 
 func (wa *wa) checkLogin(next AuthenticatedHandler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cookie, e := r.Cookie(config.GetString(config.JwtCookieNameKey))
+		cookie, e := r.Cookie(config.GetString(config.JwtCookieName))
 		if e == http.ErrNoCookie {
 			http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
 			return
@@ -306,7 +306,7 @@ func (wa *wa) message(w http.ResponseWriter, r *http.Request, u *model.Usr) {
 
 func StartWebAdmin(lg database.Login, db database.Database, tlsC *tls.Config, pk *rsa.PublicKey) {
 	// Generate or read secret for JWT auth
-	jwtSecret, e := ioutil.ReadFile(config.GetString(config.JwtTokenSecretFileKey))
+	jwtSecret, e := ioutil.ReadFile(config.GetString(config.JwtTokenSecretFile))
 	if os.IsNotExist(e) {
 		jwtSecret = generateAndSaveJwtSecret()
 	} else if e != nil {
@@ -357,14 +357,14 @@ func StartWebAdmin(lg database.Login, db database.Database, tlsC *tls.Config, pk
 	admin.Handle("/deleteUser", webAdmin.checkAdmin(webAdmin.delete))
 	admin.Handle("/rotateJwt", webAdmin.checkAdmin(webAdmin.rotateJwt))
 
-	server := &http.Server{Addr: config.GetString(config.WebAdminAddressKey), Handler: router}
+	server := &http.Server{Addr: config.GetString(config.WebAdminAddress), Handler: router}
 
 	go func() {
 		l, e := net.Listen("tcp", server.Addr)
 		if e != nil {
 			log.Fatal(e)
 		}
-		if config.GetBool(config.WebAdminUseTlsKey) {
+		if config.GetBool(config.WebAdminUseTls) {
 			l = tls.NewListener(l, tlsC)
 		}
 		log.Println("Started admin web server at ", server.Addr)
@@ -380,7 +380,7 @@ func generateAndSaveJwtSecret() []byte {
 	if e != nil {
 		log.Fatal(e)
 	}
-	e = ioutil.WriteFile(config.GetString(config.JwtTokenSecretFileKey), jwtSecret, 0700)
+	e = ioutil.WriteFile(config.GetString(config.JwtTokenSecretFile), jwtSecret, 0700)
 	if e != nil {
 		log.Fatal(e)
 	}
@@ -389,7 +389,7 @@ func generateAndSaveJwtSecret() []byte {
 
 /*
 func (wa *wa) runHealthChecks() HealthChecksViewModel {
-	txtRecords, _ := net.LookupTXT("mx._domainkey." + GetString(DomainKey))
+	txtRecords, _ := net.LookupTXT("mx._domainkey." + GetString(Domain))
 	actual := ""
 	if len(txtRecords) > 0 {
 		actual = txtRecords[0]

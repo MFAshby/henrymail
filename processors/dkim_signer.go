@@ -23,7 +23,7 @@ type dkimSigner struct {
 
 func (d dkimSigner) Process(msg *model.ReceivedMsg) error {
 	options := &dkim.SignOptions{
-		Domain:   config.GetString(config.DomainKey),
+		Domain:   config.GetString(config.Domain),
 		Selector: "mx",
 		Signer:   d.pk,
 	}
@@ -47,8 +47,8 @@ func GetOrCreateDkim() *rsa.PrivateKey {
 	var privKey *rsa.PrivateKey
 	var e error
 
-	privKeyFileName := config.GetString(config.DkimPrivateKeyFileKey)
-	pubKeyFileName := config.GetString(config.DkimPublicKeyFileKey)
+	privKeyFileName := config.GetString(config.DkimPrivateKeyFile)
+	pubKeyFileName := config.GetString(config.DkimPublicKeyFile)
 	privKeyBytes, e1 := ioutil.ReadFile(privKeyFileName)
 	pubKeyBytes, e2 := ioutil.ReadFile(pubKeyFileName)
 
@@ -56,7 +56,7 @@ func GetOrCreateDkim() *rsa.PrivateKey {
 		_ = os.MkdirAll(path.Dir(privKeyFileName), 0700)
 		_ = os.MkdirAll(path.Dir(pubKeyFileName), 0700)
 
-		privKey, e = rsa.GenerateKey(rand.Reader, config.GetInt(config.DkimKeyBitsKey))
+		privKey, e = rsa.GenerateKey(rand.Reader, config.GetInt(config.DkimKeyBits))
 		if e != nil {
 			log.Fatal(e)
 		}

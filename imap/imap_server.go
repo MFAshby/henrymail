@@ -314,10 +314,10 @@ func StartImap(lg database.Login, db database.Database, tls *tls.Config) {
 		db: db,
 	}
 	s := server.New(be)
-	s.Addr = config.GetString(config.ImapAddressKey)
+	s.Addr = config.GetString(config.ImapAddress)
 	s.Debug = os.Stdout
 	s.TLSConfig = tls
-	s.AllowInsecureAuth = !config.GetBool(config.ImapUseTlsKey)
+	s.AllowInsecureAuth = !config.GetBool(config.ImapUseTls)
 	go func() {
 		log.Println("Starting IMAP server at ", s.Addr)
 		if err := s.ListenAndServe(); err != nil {

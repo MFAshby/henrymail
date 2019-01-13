@@ -9,101 +9,101 @@ import (
 
 const (
 	// The domain we're serving email for (e.g. example.com)
-	DomainKey = "Domain"
+	Domain = "Domain"
 
 	// Network
 	// The public name of this server (e.g. mail.example.com)
-	ServerNameKey = "ServerName"
+	ServerName = "ServerName"
 	// Ports / addresses to listen on for various services
-	MsaAddressKey      = "MsaAddress"
-	MtaAddressKey      = "MtaAddress"
-	ImapAddressKey     = "ImapAddress"
-	WebAdminAddressKey = "WebAdminAddress"
+	MsaAddress      = "MsaAddress"
+	MtaAddress      = "MtaAddress"
+	ImapAddress     = "ImapAddress"
+	WebAdminAddress = "WebAdminAddress"
 
 	// DNS
-	DnsServerKey = "DnsServer"
+	DnsServer = "DnsServer"
 
 	// TLS
-	MtaUseTlsKey      = "MtaUseTls"
-	MsaUseTlsKey      = "MsaUseTls"
-	ImapUseTlsKey     = "ImapUseTls"
-	WebAdminUseTlsKey = "WebAdminUseTls"
+	MtaUseTls      = "MtaUseTls"
+	MsaUseTls      = "MsaUseTls"
+	ImapUseTls     = "ImapUseTls"
+	WebAdminUseTls = "WebAdminUseTls"
 
-	UseAutoCertKey = "UseAutoCert"
+	UseAutoCert = "UseAutoCert"
 	// If autocert is enabled
-	AutoCertEmailKey = "AutoCertEmail"
+	AutoCertEmail    = "AutoCertEmail"
 	AutoCertCacheDir = "AutoCertCacheDir"
 	// If autocert is disabled, provide TLS certs
-	CertificateFileKey = "CertificateFile"
-	KeyFileKey         = "KeyFile"
+	CertificateFile = "CertificateFile"
+	KeyFile         = "KeyFile"
 
 	// Database
-	DbDriverNameKey       = "DbDriverName"
-	DbConnectionStringKey = "DbConnectionString"
+	DbDriverName       = "DbDriverName"
+	DbConnectionString = "DbConnectionString"
 
 	// Message sending stuff
-	MaxIdleSecondsKey  = "MaxIdleSeconds"
-	MaxMessageBytesKey = "MaxMessageBytes"
-	MaxRecipientsKey   = "MaxRecipients"
-	RetryCronSpecKey   = "RetryCronSpec"
-	RetryCountKey      = "RetryCount"
+	MaxIdleSeconds  = "MaxIdleSeconds"
+	MaxMessageBytes = "MaxMessageBytes"
+	MaxRecipients   = "MaxRecipients"
+	RetryCronSpec   = "RetryCronSpec"
+	RetryCount      = "RetryCount"
 
 	// Admin stuff
-	AdminUsernameKey    = "AdminUsername"
-	DefaultMailboxesKey = "DefaultMailboxes"
+	AdminUsername    = "AdminUsername"
+	DefaultMailboxes = "DefaultMailboxes"
 
 	// DKIM
-	DkimPrivateKeyFileKey = "DkimPrivateKeyFile"
-	DkimPublicKeyFileKey  = "DkimPublicKeyFile"
-	DkimKeyBitsKey        = "DkimKeyBits"
+	DkimPrivateKeyFile = "DkimPrivateKeyFile"
+	DkimPublicKeyFile  = "DkimPublicKeyFile"
+	DkimKeyBits        = "DkimKeyBits"
 
 	// Web auth tokens
-	JwtTokenSecretFileKey = "JwtTokenSecretFile"
-	JwtCookieNameKey      = "JwtCookieName"
+	JwtTokenSecretFile = "JwtTokenSecretFile"
+	JwtCookieName      = "JwtCookieName"
 )
 
 func SetupConfig() {
-	viper.SetDefault(DomainKey, "example.com")
+	viper.SetDefault(Domain, "example.com")
 
-	viper.SetDefault(MsaAddressKey, ":1587")
-	viper.SetDefault(MtaAddressKey, ":1025")
-	viper.SetDefault(ImapAddressKey, ":1143")
-	viper.SetDefault(WebAdminAddressKey, ":2003")
-	viper.SetDefault(WebAdminUseTlsKey, false)
+	viper.SetDefault(MsaAddress, ":1587")
+	viper.SetDefault(MtaAddress, ":1025")
+	viper.SetDefault(ImapAddress, ":1143")
+	viper.SetDefault(WebAdminAddress, ":2003")
+	viper.SetDefault(WebAdminUseTls, false)
 
-	viper.SetDefault(UseAutoCertKey, true)
-	viper.SetDefault(AutoCertEmailKey, "admin@example.com")
+	viper.SetDefault(UseAutoCert, true)
+	viper.SetDefault(AutoCertEmail, "admin@example.com")
 	viper.SetDefault(AutoCertCacheDir, "keys")
-	viper.SetDefault(CertificateFileKey, "/etc/letsencrypt/live/example.com/fullchain.pem")
-	viper.SetDefault(KeyFileKey, "/etc/letsencrypt/live/example.com/privkey.pem")
+	viper.SetDefault(CertificateFile, "/etc/letsencrypt/live/example.com/fullchain.pem")
+	viper.SetDefault(KeyFile, "/etc/letsencrypt/live/example.com/privkey.pem")
 
-	viper.SetDefault(DbDriverNameKey, "sqlite3")
-	viper.SetDefault(DbConnectionStringKey, "henrymail.db")
+	viper.SetDefault(DbDriverName, "sqlite3")
+	viper.SetDefault(DbConnectionString, "henrymail.db")
 
-	viper.SetDefault(MaxIdleSecondsKey, 300)
-	viper.SetDefault(MaxMessageBytesKey, 1024*1024) // 1MB
-	viper.SetDefault(MaxRecipientsKey, 50)
-	viper.SetDefault(RetryCronSpecKey, "* * * * *") // every minute
-	viper.SetDefault(RetryCountKey, 3)
+	viper.SetDefault(MaxIdleSeconds, 300)
+	viper.SetDefault(MaxMessageBytes, 1024*1024) // 1MB
+	viper.SetDefault(MaxRecipients, 50)
+	viper.SetDefault(RetryCronSpec, "* * * * *") // every minute
+	viper.SetDefault(RetryCount, 3)
 
-	viper.SetDefault(AdminUsernameKey, "admin")
-	viper.SetDefault(DefaultMailboxesKey, []string{"INBOX", "Trash", "Sent", "Drafts"})
+	viper.SetDefault(AdminUsername, "admin")
+	viper.SetDefault(DefaultMailboxes, []string{"INBOX", "Trash", "Sent", "Drafts"})
 
-	viper.SetDefault(DkimPrivateKeyFileKey, "keys/dkim-private.pem")
-	viper.SetDefault(DkimPublicKeyFileKey, "keys/dkim-public.pem")
-	viper.SetDefault(DkimKeyBitsKey, 2048)
+	viper.SetDefault(DkimPrivateKeyFile, "keys/dkim-private.pem")
+	viper.SetDefault(DkimPublicKeyFile, "keys/dkim-public.pem")
+	viper.SetDefault(DkimKeyBits, 2048)
 
-	viper.SetDefault(JwtTokenSecretFileKey, "keys/jwt-secret")
-	viper.SetDefault(JwtCookieNameKey, "henrymail_jwt_token")
+	viper.SetDefault(JwtTokenSecretFile, "keys/jwt-secret")
+	viper.SetDefault(JwtCookieName, "henrymail_jwt_token")
 
-	viper.SetDefault(DnsServerKey, "8.8.8.8:53")
+	viper.SetDefault(DnsServer, "208.67.222.222:53") // OpenDNS
 
 	viper.SetConfigName("henrymail")
 	viper.AddConfigPath("/etc/henrymail/")
 	viper.AddConfigPath("$HOME/.henrymail")
 	viper.AddConfigPath(".")
 
-	err := viper.ReadInConfig() // Find and read the config file
+	err := viper.ReadInConfig()
 	if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 		log.Println(err)
 	} else if err != nil {
@@ -115,8 +115,7 @@ func SetupResolver() {
 	net.DefaultResolver = &net.Resolver{
 		PreferGo: true,
 		Dial: func(ctx context.Context, network, address string) (conn net.Conn, e error) {
-			d := net.Dialer{}
-			return d.DialContext(ctx, "udp", GetString(DnsServerKey))
+			return net.Dialer{}.DialContext(ctx, "udp", GetString(DnsServer))
 		},
 	}
 }
