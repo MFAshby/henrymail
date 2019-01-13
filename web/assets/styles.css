@@ -1,66 +1,72 @@
+:root {
+    --dark-background: #272822;
+    --light-background: #49483E;
+    --text: #f8f8f2;
+    --col1: #ff6188;
+    --col2: #a9dc76;
+    --col3: #ffd866;
+    --col4: #fc9867;
+    --col5: #ab9df2;
+    --col6: #78dce8;
+}
+
+/** GLOBAL **/
 html {
-    background-color: black;
-    color: white;
     margin-left: 10%;
     margin-right: 10%;
+    background: var(--dark-background);
+    color: var(--text);
 }
 
 input {
-    background-color: midnightblue;
-    color: white;
+    background: var(--light-background);
+    color: var(--text);
     display: block;
 }
 
-input[type=submit] {
-    background-color: darkred;
-    color: white;
-}
-
+/** HEADER **/
 header h1 {
     text-align: center;
 }
 
+/** NAV **/
 nav li {
     display: inline;
     text-align: center;
-    background-color: midnightblue;
     padding: 8pt;
 }
 
-nav *:visited {
-    color: white;
+nav li:nth-child(6n) a {
+    color: var(--col1);
+}
+nav li:nth-child(6n+1) a {
+    color: var(--col2);
+}
+nav li:nth-child(6n+2) a {
+    color: var(--col3);
+}
+nav li:nth-child(6n+3) a {
+    color: var(--col4);
+}
+nav li:nth-child(6n+4) a {
+    color: var(--col5);
+}
+nav li:nth-child(6n+5) a {
+    color: var(--col6);
 }
 
-
-.grid {
-    display: grid;
-    grid-template-columns: 1fr 3fr;
-    border-top: 1px solid darkgray;
-    border-right: 1px solid darkgray;
+/** TABLES **/
+table {
+    border: none;
+    border-collapse: collapse;
+    width: 100%;
 }
-
-.grid span {
-    padding: 8px 4px;
-    border-left: 1px solid darkgray;
-    border-bottom: 1px solid darkgray;
+th {
+    text-align: left;
 }
-
-.row {
-    display: contents;
+tr {
+    padding: 1em;
 }
-
-.row:hover {
-    background-color: darkred;
-}
-
-.row:nth-child(even) {
-    background-color: midnightblue;
-}
-
-.row.head, .row.foot {
-    font-weight: bold;
-}
-
-.foot-cell {
-    grid-column: 1 / 3;
+th, tr:nth-child(2n) {
+    background: var(--light-background);
 }

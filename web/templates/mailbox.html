@@ -1,21 +1,26 @@
 {{ define "content" }}
 <div class="grid">
-    <div class="row head">
-        <span class="th">From</span>
-        <span class="th">Subject</span>
-    </div>
-    {{ $mbxName := .Mailbox.Name }}
-    {{ range .Messages }}
-
-
-    <a class="row" href="/mailbox/{{$mbxName}}/{{.Id}}">
-        <span>{{ .From }}</span>
-        <span>{{ .Subject }}</span>
-    </a>
-
-    {{end}}
-    <div class="row foot">
-        <span class="foot-cell">{{ len .Messages }} messages</span>
-    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>From</th>
+                <th>Subject</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{ $mbxName := .Mailbox.Name }}
+            {{ range .Messages }}
+            <tr>
+                <td>{{ .From }}</td>
+                <td>{{ .Subject }}</td>
+            </tr>
+            {{end}}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="2">{{ len .Messages }} messages</td>
+            </tr>
+        </tfoot>
+    </table>
 </div>
 {{ end }}
