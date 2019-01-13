@@ -1,4 +1,4 @@
-package main
+package processors
 
 import (
 	"bytes"
@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"github.com/emersion/go-message"
 	"github.com/robfig/cron"
+	"henrymail/config"
+	"henrymail/database"
+	"henrymail/model"
 	"html/template"
 	"log"
 	"net"
@@ -20,10 +23,10 @@ import (
  * Store messages and retry them later
  */
 type sender struct {
-	db Database
+	db database.Database
 }
 
-func (s *sender) Process(w *ReceivedMsg) error {
+func (s *sender) Process(w *model.ReceivedMsg) error {
 	errs := make([]string, 0)
 	for _, to := range w.To {
 		err := s.sendOrStoreForRetry(to, w.From, w.Timestamp, w.Content)
@@ -83,7 +86,7 @@ func (s *sender) sendToHost(to, from, host string, content []byte) error {
 	if err != nil {
 		return err
 	}
-	err = client.Hello(GetString(DomainKey))
+	err = client.Hello(config.GetString(config.ServerNameKey))
 	if err != nil {
 		return err
 	}
@@ -126,7 +129,7 @@ func (s *sender) doRetries() {
 	for _, q := range msgs {
 		err := s.sendTo(q.To, q.From, q.Content)
 		if err != nil {
-			if q.Retries >= GetInt(RetryCountKey) {
+			if q.Retries >= config.GetInt(config.RetryCountKey) {
 				err = s.sendFailureNotification(q.To, q.From, q.Content, q.Retries)
 				if err != nil {
 					log.Println(err)
@@ -200,12 +203,12 @@ func (s *sender) sendFailureNotification(originalMsgTo, originalMsgFrom string, 
 	return e
 }
 
-func NewSender(db Database) *sender {
+func NewSender(db database.Database) *sender {
 	sender := &sender{
 		db: db,
 	}
 	cr := cron.New()
-	err := cr.AddFunc(GetString(RetryCronSpecKey), sender.doRetries)
+	err := cr.AddFunc(config.GetString(config.RetryCronSpecKey), sender.doRetries)
 	if err != nil {
 		log.Fatal(err)
 	}

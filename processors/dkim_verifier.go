@@ -1,15 +1,16 @@
-package main
+package processors
 
 import (
 	"bytes"
 	"github.com/emersion/go-dkim"
+	"henrymail/model"
 )
 
 type dkimVerifier struct {
 	next MsgProcessor
 }
 
-func (d dkimVerifier) Process(msg *ReceivedMsg) error {
+func (d dkimVerifier) Process(msg *model.ReceivedMsg) error {
 	v, e := dkim.Verify(bytes.NewReader(msg.Content))
 	if e != nil {
 		return e

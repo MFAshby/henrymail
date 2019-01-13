@@ -1,7 +1,9 @@
-package main
+package processors
 
 import (
 	"errors"
+	"henrymail/database"
+	"henrymail/model"
 	"strings"
 	"time"
 )
@@ -10,16 +12,16 @@ import (
  * Saves which are intended for our own users into their inboxes.
  */
 type saver struct {
-	db Database
+	db database.Database
 }
 
-func (s *saver) Process(wrap *ReceivedMsg) error {
+func (s *saver) Process(wrap *model.ReceivedMsg) error {
 	// Find all the inboxes for each user, if we can't do them all we'll do none.
 	inboxIds := make(map[string]int64)
 	for _, to := range wrap.To {
 		ibxId, e := s.db.GetInboxId(to)
 		if e != nil {
-			return NotFound
+			return database.NotFound
 		}
 		inboxIds[to] = ibxId
 	}
@@ -42,6 +44,6 @@ func (s *saver) Process(wrap *ReceivedMsg) error {
 	}
 }
 
-func NewSaver(db Database) MsgProcessor {
+func NewSaver(db database.Database) MsgProcessor {
 	return &saver{db: db}
 }

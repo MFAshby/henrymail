@@ -1,16 +1,18 @@
-package main
+package database
 
 import (
 	"errors"
 	"golang.org/x/crypto/bcrypt"
+	"henrymail/config"
+	"henrymail/model"
 )
 
 /**
  * A wrapper around the database for correctly handling login
  */
 type Login interface {
-	Login(email, password string) (*Usr, error)
-	NewUser(email, password string, admin bool) (*Usr, error)
+	Login(email, password string) (*model.Usr, error)
+	NewUser(email, password string, admin bool) (*model.Usr, error)
 	ChangePassword(email, password, password2 string) error
 }
 
@@ -22,7 +24,7 @@ func NewLogin(db Database) Login {
 	return &dbLogin{db: db}
 }
 
-func (db dbLogin) Login(email, password string) (*Usr, error) {
+func (db dbLogin) Login(email, password string) (*model.Usr, error) {
 	user, passwordBytes, e := db.db.GetUserAndPassword(email)
 	if e != nil {
 		return nil, e
@@ -34,7 +36,7 @@ func (db dbLogin) Login(email, password string) (*Usr, error) {
 	return user, nil
 }
 
-func (db dbLogin) NewUser(email, password string, admin bool) (*Usr, error) {
+func (db dbLogin) NewUser(email, password string, admin bool) (*model.Usr, error) {
 	passwordBytes, e := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if e != nil {
 		return nil, e
@@ -43,7 +45,7 @@ func (db dbLogin) NewUser(email, password string, admin bool) (*Usr, error) {
 	if e != nil {
 		return nil, e
 	}
-	defaultMailboxes := GetStringSlice(DefaultMailboxesKey)
+	defaultMailboxes := config.GetStringSlice(config.DefaultMailboxesKey)
 	for _, name := range defaultMailboxes {
 		_, e := db.db.InsertMailbox(name, usr.Id)
 		if e != nil {

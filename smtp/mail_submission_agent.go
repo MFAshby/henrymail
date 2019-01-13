@@ -1,10 +1,14 @@
-package main
+package smtp
 
 import (
 	"bytes"
 	"crypto/tls"
 	"github.com/emersion/go-message"
 	"github.com/emersion/go-smtp"
+	"henrymail/config"
+	"henrymail/database"
+	"henrymail/model"
+	"henrymail/processors"
 	"io"
 	"io/ioutil"
 	"log"
@@ -14,20 +18,20 @@ import (
 /**
  * Accepts new mail from our own users for sending
  */
-func StartMsa(proc MsgProcessor, lg Login, config *tls.Config) {
+func StartMsa(proc processors.MsgProcessor, lg database.Login, tls *tls.Config) {
 	be := &sbe{
 		proc: proc,
 		lg:   lg,
 	}
 	s := smtp.NewServer(be)
-	s.Addr = GetString(MsaAddressKey)
-	s.Domain = GetString(ServerNameKey)
-	s.MaxIdleSeconds = GetInt(MaxIdleSecondsKey)
-	s.MaxMessageBytes = GetInt(MaxMessageBytesKey)
-	s.MaxRecipients = GetInt(MaxRecipientsKey)
-	s.AllowInsecureAuth = !GetBool(MsaUseTlsKey)
+	s.Addr = config.GetString(config.MsaAddressKey)
+	s.Domain = config.GetString(config.ServerNameKey)
+	s.MaxIdleSeconds = config.GetInt(config.MaxIdleSecondsKey)
+	s.MaxMessageBytes = config.GetInt(config.MaxMessageBytesKey)
+	s.MaxRecipients = config.GetInt(config.MaxRecipientsKey)
+	s.AllowInsecureAuth = !config.GetBool(config.MsaUseTlsKey)
 	s.Debug = os.Stdout
-	s.TLSConfig = config
+	s.TLSConfig = tls
 	go func() {
 		log.Println("Starting mail submission agent at ", s.Addr)
 		if err := s.ListenAndServe(); err != nil {
@@ -37,8 +41,8 @@ func StartMsa(proc MsgProcessor, lg Login, config *tls.Config) {
 }
 
 type sbe struct {
-	proc MsgProcessor
-	lg   Login
+	proc processors.MsgProcessor
+	lg   database.Login
 }
 
 func (b *sbe) Login(username, password string) (smtp.User, error) {
@@ -57,8 +61,8 @@ func (b *sbe) AnonymousLogin() (smtp.User, error) {
 }
 
 type sus struct {
-	proc MsgProcessor
-	u    *Usr
+	proc processors.MsgProcessor
+	u    *model.Usr
 }
 
 func (u *sus) Send(from string, to []string, r io.Reader) error {
@@ -74,7 +78,7 @@ func (u *sus) Send(from string, to []string, r io.Reader) error {
 	}
 
 	// Pass it on
-	return u.proc.Process(&ReceivedMsg{
+	return u.proc.Process(&model.ReceivedMsg{
 		From:    from,
 		To:      to,
 		Content: content,

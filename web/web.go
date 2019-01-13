@@ -1,4 +1,4 @@
-package main
+package web
 
 import (
 	"crypto/rand"
@@ -8,6 +8,9 @@ import (
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
+	"henrymail/config"
+	"henrymail/database"
+	"henrymail/model"
 	"html/template"
 	"io/ioutil"
 	"log"
@@ -21,10 +24,10 @@ import (
 
 func NewView(layout string, files ...string) *View {
 	files = append(files,
-		"templates/index.html",
-		"templates/navigation.html",
-		"templates/header.html",
-		"templates/footer.html",
+		"web/templates/index.html",
+		"web/templates/navigation.html",
+		"web/templates/header.html",
+		"web/templates/footer.html",
 	)
 	t, err := template.ParseFiles(files...)
 	if err != nil {
@@ -50,13 +53,13 @@ func (v *View) Render(w http.ResponseWriter, viewModel interface{}) {
 
 // Data required for header, navigation etc
 type LayoutData struct {
-	Mailboxes   []*Mbx
-	CurrentUser *Usr
+	Mailboxes   []*model.Mbx
+	CurrentUser *model.Usr
 }
 
 type wa struct {
-	lg        Login
-	db        Database
+	lg        database.Login
+	db        database.Database
 	jwtSecret []byte
 	pk        *rsa.PublicKey
 
@@ -67,18 +70,18 @@ type wa struct {
 	messageView        *View
 }
 
-type AuthenticatedHandler = func(w http.ResponseWriter, r *http.Request, u *Usr)
+type AuthenticatedHandler = func(w http.ResponseWriter, r *http.Request, u *model.Usr)
 
 func (wa *wa) renderError(w http.ResponseWriter, err error) {
 	w.WriteHeader(http.StatusInternalServerError)
 	wa.errorView.Render(w, err)
 }
 
-func (wa *wa) root(w http.ResponseWriter, r *http.Request, u *Usr) {
+func (wa *wa) root(w http.ResponseWriter, r *http.Request, u *model.Usr) {
 	http.Redirect(w, r, "/mailbox/INBOX", http.StatusFound)
 }
 
-func (wa *wa) delete(w http.ResponseWriter, r *http.Request, u *Usr) {
+func (wa *wa) delete(w http.ResponseWriter, r *http.Request, u *model.Usr) {
 	email := r.FormValue("email")
 	if email == u.Email {
 		wa.renderError(w, errors.New("You cannot delete yourself"))
@@ -92,7 +95,7 @@ func (wa *wa) delete(w http.ResponseWriter, r *http.Request, u *Usr) {
 	}
 }
 
-func (wa *wa) add(w http.ResponseWriter, r *http.Request, u *Usr) {
+func (wa *wa) add(w http.ResponseWriter, r *http.Request, u *model.Usr) {
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 	_, err := wa.lg.NewUser(email, password, false)
@@ -105,7 +108,7 @@ func (wa *wa) add(w http.ResponseWriter, r *http.Request, u *Usr) {
 
 type UserClaims struct {
 	jwt.StandardClaims
-	*Usr
+	*model.Usr
 }
 
 func (c UserClaims) Valid() error {
@@ -136,30 +139,30 @@ func (wa *wa) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.SetCookie(w, &http.Cookie{
-		Name:     GetString(JwtCookieNameKey),
+		Name:     config.GetString(config.JwtCookieNameKey),
 		Value:    tokenString,
 		HttpOnly: true,
-		Secure:   GetBool(WebAdminUseTlsKey),
-		Domain:   GetString(ServerNameKey),
+		Secure:   config.GetBool(config.WebAdminUseTlsKey),
+		Domain:   config.GetString(config.ServerNameKey),
 	})
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func (wa *wa) logout(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
-		Name:     GetString(JwtCookieNameKey),
+		Name:     config.GetString(config.JwtCookieNameKey),
 		Value:    "bogus",
 		Expires:  time.Now(),
 		HttpOnly: true,
-		Secure:   GetBool(WebAdminUseTlsKey),
-		Domain:   GetString(ServerNameKey),
+		Secure:   config.GetBool(config.WebAdminUseTlsKey),
+		Domain:   config.GetString(config.ServerNameKey),
 	})
 	wa.loginView.Render(w, nil)
 	w.WriteHeader(200)
 }
 
 func (wa *wa) checkAdmin(next AuthenticatedHandler) http.Handler {
-	return wa.checkLogin(func(w http.ResponseWriter, r *http.Request, user *Usr) {
+	return wa.checkLogin(func(w http.ResponseWriter, r *http.Request, user *model.Usr) {
 		if !user.Admin {
 			wa.renderError(w, errors.New("You are not an administrator"))
 			return
@@ -170,7 +173,7 @@ func (wa *wa) checkAdmin(next AuthenticatedHandler) http.Handler {
 
 func (wa *wa) checkLogin(next AuthenticatedHandler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cookie, e := r.Cookie(GetString(JwtCookieNameKey))
+		cookie, e := r.Cookie(config.GetString(config.JwtCookieNameKey))
 		if e == http.ErrNoCookie {
 			http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
 			return
@@ -195,12 +198,12 @@ func (wa *wa) checkLogin(next AuthenticatedHandler) http.Handler {
 	})
 }
 
-func (wa *wa) rotateJwt(w http.ResponseWriter, r *http.Request, u *Usr) {
+func (wa *wa) rotateJwt(w http.ResponseWriter, r *http.Request, u *model.Usr) {
 	wa.jwtSecret = generateAndSaveJwtSecret()
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-func (wa *wa) changePassword(w http.ResponseWriter, r *http.Request, u *Usr) {
+func (wa *wa) changePassword(w http.ResponseWriter, r *http.Request, u *model.Usr) {
 	layoutData, e := wa.layoutData(u)
 	if e != nil {
 		wa.renderError(w, e)
@@ -226,7 +229,7 @@ func (wa *wa) changePassword(w http.ResponseWriter, r *http.Request, u *Usr) {
 	wa.changePasswordView.Render(w, data)
 }
 
-func (wa *wa) layoutData(u *Usr) (*LayoutData, error) {
+func (wa *wa) layoutData(u *model.Usr) (*LayoutData, error) {
 	mbxes, e := wa.db.GetMailboxes(true, u.Id)
 	if e != nil {
 		return nil, e
@@ -237,7 +240,7 @@ func (wa *wa) layoutData(u *Usr) (*LayoutData, error) {
 	}, nil
 }
 
-func (wa *wa) msgs(name string, u *Usr) (*Mbx, []*Msg, error) {
+func (wa *wa) msgs(name string, u *model.Usr) (*model.Mbx, []*model.Msg, error) {
 	mbx, e := wa.db.GetMailboxByName(name, u.Id)
 	if e != nil {
 		return nil, nil, e
@@ -249,7 +252,7 @@ func (wa *wa) msgs(name string, u *Usr) (*Mbx, []*Msg, error) {
 	return mbx, msgs, nil
 }
 
-func (wa *wa) mailbox(w http.ResponseWriter, r *http.Request, u *Usr) {
+func (wa *wa) mailbox(w http.ResponseWriter, r *http.Request, u *model.Usr) {
 	ld, e := wa.layoutData(u)
 	if e != nil {
 		wa.renderError(w, e)
@@ -258,8 +261,8 @@ func (wa *wa) mailbox(w http.ResponseWriter, r *http.Request, u *Usr) {
 	mbx, msgs, e := wa.msgs(mux.Vars(r)["name"], u)
 	data := struct {
 		LayoutData
-		Mailbox  *Mbx
-		Messages []*Msg
+		Mailbox  *model.Mbx
+		Messages []*model.Msg
 	}{
 		*ld,
 		mbx,
@@ -268,7 +271,7 @@ func (wa *wa) mailbox(w http.ResponseWriter, r *http.Request, u *Usr) {
 	wa.mailboxView.Render(w, data)
 }
 
-func (wa *wa) message(w http.ResponseWriter, r *http.Request, u *Usr) {
+func (wa *wa) message(w http.ResponseWriter, r *http.Request, u *model.Usr) {
 	ld, e := wa.layoutData(u)
 	if e != nil {
 		wa.renderError(w, e)
@@ -286,7 +289,7 @@ func (wa *wa) message(w http.ResponseWriter, r *http.Request, u *Usr) {
 		wa.renderError(w, e)
 		return
 	}
-	var sel *Msg
+	var sel *model.Msg
 	for _, msg := range msgs {
 		if msg.Id == int64(id) {
 			sel = msg
@@ -294,16 +297,16 @@ func (wa *wa) message(w http.ResponseWriter, r *http.Request, u *Usr) {
 	}
 	wa.messageView.Render(w, struct {
 		LayoutData
-		Message *Msg
+		Message *model.Msg
 	}{
 		*ld,
 		sel,
 	})
 }
 
-func StartWebAdmin(lg Login, db Database, config *tls.Config, pk *rsa.PublicKey) {
+func StartWebAdmin(lg database.Login, db database.Database, tlsC *tls.Config, pk *rsa.PublicKey) {
 	// Generate or read secret for JWT auth
-	jwtSecret, e := ioutil.ReadFile(GetString(JwtTokenSecretFileKey))
+	jwtSecret, e := ioutil.ReadFile(config.GetString(config.JwtTokenSecretFileKey))
 	if os.IsNotExist(e) {
 		jwtSecret = generateAndSaveJwtSecret()
 	} else if e != nil {
@@ -312,7 +315,7 @@ func StartWebAdmin(lg Login, db Database, config *tls.Config, pk *rsa.PublicKey)
 
 	// Read the templates
 	tp := template.New("html")
-	e = filepath.Walk("templates", func(path string, info os.FileInfo, err error) error {
+	e = filepath.Walk("web/templates", func(path string, info os.FileInfo, err error) error {
 		if !info.IsDir() {
 			_, err = tp.ParseFiles(path)
 			if err != nil {
@@ -330,10 +333,10 @@ func StartWebAdmin(lg Login, db Database, config *tls.Config, pk *rsa.PublicKey)
 		db:                 db,
 		jwtSecret:          jwtSecret,
 		pk:                 pk,
-		loginView:          NewView("login.html", "templates/login.html"),
-		mailboxView:        NewView("index.html", "templates/mailbox.html"),
-		changePasswordView: NewView("index.html", "templates/change_password.html"),
-		messageView:        NewView("index.html", "templates/message.html"),
+		loginView:          NewView("login.html", "web/templates/login.html"),
+		mailboxView:        NewView("index.html", "web/templates/mailbox.html"),
+		changePasswordView: NewView("index.html", "web/templates/change_password.html"),
+		messageView:        NewView("index.html", "web/templates/message.html"),
 	}
 
 	if e != nil {
@@ -347,22 +350,22 @@ func StartWebAdmin(lg Login, db Database, config *tls.Config, pk *rsa.PublicKey)
 	router.Handle("/mailbox/{name}/{id}", webAdmin.checkLogin(webAdmin.message))
 	router.Handle("/", webAdmin.checkLogin(webAdmin.root))
 
-	router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))
+	router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(http.Dir("web/assets"))))
 
 	admin := router.PathPrefix("/admin/").Subrouter()
 	admin.Handle("/addUser", webAdmin.checkAdmin(webAdmin.add))
 	admin.Handle("/deleteUser", webAdmin.checkAdmin(webAdmin.delete))
 	admin.Handle("/rotateJwt", webAdmin.checkAdmin(webAdmin.rotateJwt))
 
-	server := &http.Server{Addr: GetString(WebAdminAddressKey), Handler: router}
+	server := &http.Server{Addr: config.GetString(config.WebAdminAddressKey), Handler: router}
 
 	go func() {
 		l, e := net.Listen("tcp", server.Addr)
 		if e != nil {
 			log.Fatal(e)
 		}
-		if GetBool(WebAdminUseTlsKey) {
-			l = tls.NewListener(l, config)
+		if config.GetBool(config.WebAdminUseTlsKey) {
+			l = tls.NewListener(l, tlsC)
 		}
 		log.Println("Started admin web server at ", server.Addr)
 		if err := server.Serve(l); err != nil {
@@ -377,7 +380,7 @@ func generateAndSaveJwtSecret() []byte {
 	if e != nil {
 		log.Fatal(e)
 	}
-	e = ioutil.WriteFile(GetString(JwtTokenSecretFileKey), jwtSecret, 0700)
+	e = ioutil.WriteFile(config.GetString(config.JwtTokenSecretFileKey), jwtSecret, 0700)
 	if e != nil {
 		log.Fatal(e)
 	}

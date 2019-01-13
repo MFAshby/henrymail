@@ -1,4 +1,4 @@
-package main
+package processors
 
 import (
 	"bytes"
@@ -8,9 +8,12 @@ import (
 	"encoding/pem"
 	"errors"
 	"github.com/emersion/go-dkim"
+	"henrymail/config"
+	"henrymail/model"
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 )
 
 type dkimSigner struct {
@@ -18,9 +21,9 @@ type dkimSigner struct {
 	next MsgProcessor
 }
 
-func (d dkimSigner) Process(msg *ReceivedMsg) error {
+func (d dkimSigner) Process(msg *model.ReceivedMsg) error {
 	options := &dkim.SignOptions{
-		Domain:   GetString(DomainKey),
+		Domain:   config.GetString(config.DomainKey),
 		Selector: "mx",
 		Signer:   d.pk,
 	}
@@ -44,15 +47,20 @@ func GetOrCreateDkim() *rsa.PrivateKey {
 	var privKey *rsa.PrivateKey
 	var e error
 
-	privKeyBytes, e1 := ioutil.ReadFile(GetString(DkimPrivateKeyFileKey))
-	pubKeyBytes, e2 := ioutil.ReadFile(GetString(DkimPublicKeyFileKey))
+	privKeyFileName := config.GetString(config.DkimPrivateKeyFileKey)
+	pubKeyFileName := config.GetString(config.DkimPublicKeyFileKey)
+	privKeyBytes, e1 := ioutil.ReadFile(privKeyFileName)
+	pubKeyBytes, e2 := ioutil.ReadFile(pubKeyFileName)
 
 	if os.IsNotExist(e1) && os.IsNotExist(e2) {
-		privKey, e = rsa.GenerateKey(rand.Reader, GetInt(DkimKeyBitsKey))
+		_ = os.MkdirAll(path.Dir(privKeyFileName), 0700)
+		_ = os.MkdirAll(path.Dir(pubKeyFileName), 0700)
+
+		privKey, e = rsa.GenerateKey(rand.Reader, config.GetInt(config.DkimKeyBitsKey))
 		if e != nil {
 			log.Fatal(e)
 		}
-		e = ioutil.WriteFile(GetString(DkimPrivateKeyFileKey),
+		e = ioutil.WriteFile(privKeyFileName,
 			ExportRsaPrivateKeyAsPem(privKey),
 			0700)
 		if e != nil {
@@ -64,7 +72,7 @@ func GetOrCreateDkim() *rsa.PrivateKey {
 			log.Fatal(e)
 		}
 
-		e = ioutil.WriteFile(GetString(DkimPublicKeyFileKey), pubKey, 0700)
+		e = ioutil.WriteFile(pubKeyFileName, pubKey, 0700)
 		if e != nil {
 			log.Fatal(e)
 		}

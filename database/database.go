@@ -1,10 +1,12 @@
-package main
+package database
 
 import (
 	"database/sql"
 	"errors"
 	"github.com/emersion/go-imap"
 	_ "github.com/mattn/go-sqlite3"
+	"henrymail/config"
+	"henrymail/model"
 	"log"
 	"strings"
 	"sync"
@@ -13,27 +15,27 @@ import (
 
 // Interface
 type Database interface {
-	InsertUser(email string, passwordBytes []byte, admin bool) (*Usr, error)
-	GetUserAndPassword(email string) (*Usr, []byte, error)
-	GetUsers() ([]*Usr, error)
+	InsertUser(email string, passwordBytes []byte, admin bool) (*model.Usr, error)
+	GetUserAndPassword(email string) (*model.Usr, []byte, error)
+	GetUsers() ([]*model.Usr, error)
 	DeleteUser(email string) error
 
-	InsertMailbox(name string, usrId int64) (*Mbx, error)
-	GetMailboxes(subscribed bool, usrId int64) ([]*Mbx, error)
-	GetMailboxByName(name string, usrId int64) (*Mbx, error)
-	GetMailboxById(id int64) (*Mbx, error)
+	InsertMailbox(name string, usrId int64) (*model.Mbx, error)
+	GetMailboxes(subscribed bool, usrId int64) ([]*model.Mbx, error)
+	GetMailboxByName(name string, usrId int64) (*model.Mbx, error)
+	GetMailboxById(id int64) (*model.Mbx, error)
 	GetInboxId(email string) (int64, error)
 	SetMailboxSubscribed(mbxId int64, subscribed bool) error
 	RenameMailbox(userId int64, originalName, newName string) error
 	DeleteMailbox(name string, usrId int64) error
 
-	InsertMessage(content []byte, flags []string, mbxId int64, timestamp time.Time) (*Msg, error)
-	GetMessages(mbxId int64, lowerUid, upperUid int) ([]*Msg, error)
+	InsertMessage(content []byte, flags []string, mbxId int64, timestamp time.Time) (*model.Msg, error)
+	GetMessages(mbxId int64, lowerUid, upperUid int) ([]*model.Msg, error)
 	SetMessageFlags(msgId int64, flags []string) error
 	DeleteMessage(msgId int64) error
 
-	InsertQueue(from, to string, content []byte, timestamp time.Time) (*QueuedMsg, error)
-	GetQueue() ([]*QueuedMsg, error)
+	InsertQueue(from, to string, content []byte, timestamp time.Time) (*model.QueuedMsg, error)
+	GetQueue() ([]*model.QueuedMsg, error)
 	IncrementRetries(queueId int64) error
 	DeleteQueue(queueId int64) error
 	SetUserPassword(email string, passwordBytes []byte) error
@@ -142,7 +144,7 @@ func (db *sqlDb) IncrementRetries(queueId int64) error {
 		`, queueId))
 }
 
-func (db *sqlDb) GetQueue() ([]*QueuedMsg, error) {
+func (db *sqlDb) GetQueue() ([]*model.QueuedMsg, error) {
 	db.mut.RLock()
 	defer db.mut.RUnlock()
 	rows, e := db.db.Query(`
@@ -152,9 +154,9 @@ func (db *sqlDb) GetQueue() ([]*QueuedMsg, error) {
 	if e != nil {
 		return nil, e
 	}
-	var queue []*QueuedMsg
+	var queue []*model.QueuedMsg
 	for rows.Next() {
-		msg := &QueuedMsg{}
+		msg := &model.QueuedMsg{}
 		e := rows.Scan(&msg.Id, &msg.From, &msg.To, &msg.Timestamp, &msg.Content, &msg.Retries)
 		if e != nil {
 			return nil, e
@@ -164,7 +166,7 @@ func (db *sqlDb) GetQueue() ([]*QueuedMsg, error) {
 	return queue, nil
 }
 
-func checkErrorsSetId(o *HasId, r sql.Result, e error) error {
+func checkErrorsSetId(o *model.HasId, r sql.Result, e error) error {
 	if e != nil {
 		return e
 	}
@@ -176,10 +178,10 @@ func checkErrorsSetId(o *HasId, r sql.Result, e error) error {
 	return nil
 }
 
-func (db *sqlDb) InsertQueue(from, to string, content []byte, timestamp time.Time) (*QueuedMsg, error) {
+func (db *sqlDb) InsertQueue(from, to string, content []byte, timestamp time.Time) (*model.QueuedMsg, error) {
 	db.mut.Lock()
 	defer db.mut.Unlock()
-	msg := &QueuedMsg{
+	msg := &model.QueuedMsg{
 		To:        to,
 		From:      from,
 		Retries:   0,
@@ -209,7 +211,7 @@ func (db *sqlDb) GetInboxId(email string) (int64, error) {
 	return ibxId, e
 }
 
-func (db *sqlDb) GetMessages(mbxId int64, lowerUid, upperUid int) ([]*Msg, error) {
+func (db *sqlDb) GetMessages(mbxId int64, lowerUid, upperUid int) ([]*model.Msg, error) {
 	db.mut.RLock()
 	defer db.mut.RUnlock()
 	var params []interface{}
@@ -236,9 +238,9 @@ func (db *sqlDb) GetMessages(mbxId int64, lowerUid, upperUid int) ([]*Msg, error
 	if e != nil {
 		return nil, e
 	}
-	msgs := []*Msg{}
+	msgs := []*model.Msg{}
 	for rows.Next() {
-		msg := &Msg{}
+		msg := &model.Msg{}
 		e := rows.Scan(&msg.Id, &msg.MbxId, &msg.Content, &msg.Uid, &msg.Timestamp)
 		if e != nil {
 			return nil, e
@@ -267,10 +269,10 @@ func (db *sqlDb) GetMessages(mbxId int64, lowerUid, upperUid int) ([]*Msg, error
 	return msgs, nil
 }
 
-func (db *sqlDb) InsertMessage(content []byte, flags []string, mbxId int64, timestamp time.Time) (*Msg, error) {
+func (db *sqlDb) InsertMessage(content []byte, flags []string, mbxId int64, timestamp time.Time) (*model.Msg, error) {
 	db.mut.Lock()
 	defer db.mut.Unlock()
-	msg := &Msg{
+	msg := &model.Msg{
 		MbxId:     mbxId,
 		Content:   content,
 		Flags:     flags,
@@ -333,10 +335,10 @@ func transact(db *sql.DB, txFunc func(*sql.Tx) error) (err error) {
 	return err
 }
 
-func (db *sqlDb) InsertMailbox(name string, usrId int64) (*Mbx, error) {
+func (db *sqlDb) InsertMailbox(name string, usrId int64) (*model.Mbx, error) {
 	db.mut.Lock()
 	defer db.mut.Unlock()
-	mbx := &Mbx{
+	mbx := &model.Mbx{
 		Name:        name,
 		UserId:      usrId,
 		UidNext:     1,
@@ -349,7 +351,7 @@ func (db *sqlDb) InsertMailbox(name string, usrId int64) (*Mbx, error) {
 	return mbx, checkErrorsSetId(&mbx.HasId, res, e)
 }
 
-func (db *sqlDb) GetMailboxes(subscribed bool, usrId int64) ([]*Mbx, error) {
+func (db *sqlDb) GetMailboxes(subscribed bool, usrId int64) ([]*model.Mbx, error) {
 	db.mut.RLock()
 	defer db.mut.RUnlock()
 	sq := new(strings.Builder)
@@ -369,9 +371,9 @@ func (db *sqlDb) GetMailboxes(subscribed bool, usrId int64) ([]*Mbx, error) {
 	if e != nil {
 		return nil, e
 	}
-	mbxs := make([]*Mbx, 0)
+	mbxs := make([]*model.Mbx, 0)
 	for rows.Next() {
-		mbx := &Mbx{}
+		mbx := &model.Mbx{}
 		e := rows.Scan(&mbx.Id, &mbx.UserId, &mbx.Name, &mbx.UidNext, &mbx.UidValidity)
 		if e != nil {
 			return nil, e
@@ -381,7 +383,7 @@ func (db *sqlDb) GetMailboxes(subscribed bool, usrId int64) ([]*Mbx, error) {
 	return mbxs, nil
 }
 
-func (db *sqlDb) GetMailboxById(id int64) (*Mbx, error) {
+func (db *sqlDb) GetMailboxById(id int64) (*model.Mbx, error) {
 	db.mut.RLock()
 	defer db.mut.RUnlock()
 	row := db.db.QueryRow(`
@@ -392,7 +394,7 @@ func (db *sqlDb) GetMailboxById(id int64) (*Mbx, error) {
 	return db.readMailbox(row)
 }
 
-func (db *sqlDb) GetMailboxByName(name string, usrId int64) (*Mbx, error) {
+func (db *sqlDb) GetMailboxByName(name string, usrId int64) (*model.Mbx, error) {
 	db.mut.RLock()
 	defer db.mut.RUnlock()
 	row := db.db.QueryRow(`
@@ -404,8 +406,8 @@ func (db *sqlDb) GetMailboxByName(name string, usrId int64) (*Mbx, error) {
 	return db.readMailbox(row)
 }
 
-func (db *sqlDb) readMailbox(row *sql.Row) (*Mbx, error) {
-	mbx := &Mbx{}
+func (db *sqlDb) readMailbox(row *sql.Row) (*model.Mbx, error) {
+	mbx := &model.Mbx{}
 	e := row.Scan(&mbx.Id, &mbx.UserId, &mbx.Name, &mbx.UidNext, &mbx.UidValidity)
 	if e == sql.ErrNoRows {
 		return nil, NotFound
@@ -484,7 +486,7 @@ func (db *sqlDb) DeleteUser(email string) error {
 	`, email))
 }
 
-func (db *sqlDb) GetUsers() ([]*Usr, error) {
+func (db *sqlDb) GetUsers() ([]*model.Usr, error) {
 	db.mut.RLock()
 	defer db.mut.RUnlock()
 	rows, e := db.db.Query(`
@@ -494,9 +496,9 @@ func (db *sqlDb) GetUsers() ([]*Usr, error) {
 	if e != nil {
 		return nil, e
 	}
-	users := make([]*Usr, 0)
+	users := make([]*model.Usr, 0)
 	for rows.Next() {
-		u := &Usr{}
+		u := &model.Usr{}
 		e := rows.Scan(&u.Id, &u.Email, &u.Admin)
 		if e != nil {
 			return nil, e
@@ -506,7 +508,7 @@ func (db *sqlDb) GetUsers() ([]*Usr, error) {
 	return users, nil
 }
 
-func (db *sqlDb) GetUserAndPassword(email string) (*Usr, []byte, error) {
+func (db *sqlDb) GetUserAndPassword(email string) (*model.Usr, []byte, error) {
 	db.mut.RLock()
 	defer db.mut.RUnlock()
 	row := db.db.QueryRow(`
@@ -514,7 +516,7 @@ func (db *sqlDb) GetUserAndPassword(email string) (*Usr, []byte, error) {
 		FROM users 
 		WHERE Email = ?
 	`, email)
-	u := &Usr{}
+	u := &model.Usr{}
 	var pw []byte
 	e := row.Scan(&u.Id, &u.Email, &pw, &u.Admin)
 	if e == sql.ErrNoRows {
@@ -529,10 +531,10 @@ func (db *sqlDb) GetUserAndPassword(email string) (*Usr, []byte, error) {
 	return u, pw, nil
 }
 
-func (db *sqlDb) InsertUser(email string, passwordBytes []byte, admin bool) (*Usr, error) {
+func (db *sqlDb) InsertUser(email string, passwordBytes []byte, admin bool) (*model.Usr, error) {
 	db.mut.Lock()
 	defer db.mut.Unlock()
-	usr := &Usr{
+	usr := &model.Usr{
 		Email: email,
 	}
 	res, e := db.db.Exec(`
@@ -543,7 +545,7 @@ func (db *sqlDb) InsertUser(email string, passwordBytes []byte, admin bool) (*Us
 }
 
 func NewDatabase() Database {
-	db, err := sql.Open(GetString(DbDriverNameKey), GetString(DbConnectionStringKey))
+	db, err := sql.Open(config.GetString(config.DbDriverNameKey), config.GetString(config.DbConnectionStringKey))
 	if err != nil {
 		log.Fatal(err)
 	}

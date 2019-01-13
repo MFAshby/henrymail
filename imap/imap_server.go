@@ -1,15 +1,15 @@
-package main
+package imap
 
 import (
-	"bytes"
 	"crypto/tls"
 	"errors"
 	"fmt"
 	"github.com/emersion/go-imap"
 	"github.com/emersion/go-imap/backend"
-	"github.com/emersion/go-imap/backend/backendutil"
 	"github.com/emersion/go-imap/server"
-	"github.com/emersion/go-message"
+	"henrymail/config"
+	"henrymail/database"
+	"henrymail/model"
 	"io/ioutil"
 	"log"
 	"os"
@@ -17,8 +17,8 @@ import (
 )
 
 type ibe struct {
-	lg Login
-	db Database
+	lg database.Login
+	db database.Database
 }
 
 func (b *ibe) Login(username, password string) (backend.User, error) {
@@ -33,8 +33,8 @@ func (b *ibe) Login(username, password string) (backend.User, error) {
 }
 
 type ius struct {
-	user *Usr
-	db   Database
+	user *model.Usr
+	db   database.Database
 }
 
 func (u *ius) Username() string {
@@ -87,14 +87,14 @@ func (*ius) Logout() error {
 // Only store the ID, so we dont end up with stale data being read!
 type imb struct {
 	mbxId int64
-	db    Database
+	db    database.Database
 }
 
-func (m *imb) getMbx() *Mbx {
+func (m *imb) getMbx() *model.Mbx {
 	mbx, e := m.db.GetMailboxById(m.mbxId)
 	if e != nil {
 		log.Println(e)
-		return &Mbx{}
+		return &model.Mbx{}
 	}
 	return mbx
 }
@@ -173,56 +173,8 @@ func (m *imb) ListMessages(uid bool, seqset *imap.SeqSet, items []imap.FetchItem
 	return nil
 }
 
-func (m *imb) getAllMessages() ([]*Msg, error) {
+func (m *imb) getAllMessages() ([]*model.Msg, error) {
 	return m.db.GetMessages(m.mbxId, -1, -1)
-}
-
-func (m *Msg) Fetch(seqNum uint32, items []imap.FetchItem) (*imap.Message, error) {
-	fetched := imap.NewMessage(seqNum, items)
-	for _, item := range items {
-		switch item {
-		case imap.FetchEnvelope:
-			e, _ := message.Read(bytes.NewReader(m.Content))
-			fetched.Envelope, _ = backendutil.FetchEnvelope(e.Header)
-		case imap.FetchBody, imap.FetchBodyStructure:
-			e, _ := message.Read(bytes.NewReader(m.Content))
-			fetched.BodyStructure, _ = backendutil.FetchBodyStructure(e, item == imap.FetchBodyStructure)
-		case imap.FetchFlags:
-			fetched.Flags = m.Flags
-		case imap.FetchInternalDate:
-			fetched.InternalDate = time.Now()
-		case imap.FetchRFC822Size:
-			fetched.Size = uint32(len(m.Content))
-		case imap.FetchUid:
-			fetched.Uid = m.Uid
-		default:
-			section, err := imap.ParseBodySectionName(item)
-			if err != nil {
-				break
-			}
-
-			e, _ := message.Read(bytes.NewReader(m.Content))
-			l, _ := backendutil.FetchBodySection(e, section)
-			fetched.Body[section] = l
-		}
-	}
-
-	return fetched, nil
-}
-
-func (m *Msg) Match(seqNum uint32, c *imap.SearchCriteria) (bool, error) {
-	if !backendutil.MatchSeqNumAndUid(seqNum, m.Uid, c) {
-		return false, nil
-	}
-	if !backendutil.MatchDate(m.Timestamp, c) {
-		return false, nil
-	}
-	if !backendutil.MatchFlags(m.Flags, c) {
-		return false, nil
-	}
-
-	e, _ := m.Entity()
-	return backendutil.Match(e, c)
 }
 
 func (m *imb) SearchMessages(uid bool, criteria *imap.SearchCriteria) ([]uint32, error) {
@@ -356,15 +308,16 @@ func (sl stringSl) contains(s string) bool {
 	return false
 }
 
-func StartImap(lg Login, db Database, config *tls.Config) {
+func StartImap(lg database.Login, db database.Database, tls *tls.Config) {
 	be := &ibe{
 		lg: lg,
 		db: db,
 	}
 	s := server.New(be)
-	s.Addr = GetString(ImapAddressKey)
+	s.Addr = config.GetString(config.ImapAddressKey)
 	s.Debug = os.Stdout
-	s.TLSConfig = config
+	s.TLSConfig = tls
+	s.AllowInsecureAuth = !config.GetBool(config.ImapUseTlsKey)
 	go func() {
 		log.Println("Starting IMAP server at ", s.Addr)
 		if err := s.ListenAndServe(); err != nil {
