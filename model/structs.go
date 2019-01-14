@@ -2,10 +2,13 @@ package model
 
 import (
 	"bytes"
+	"errors"
 	"github.com/emersion/go-dkim"
 	"github.com/emersion/go-imap"
 	"github.com/emersion/go-imap/backend/backendutil"
 	"github.com/emersion/go-message"
+	"html/template"
+	"io"
 	"io/ioutil"
 	"time"
 )
@@ -112,16 +115,58 @@ func (m *Msg) To() string {
 	return m.headerOrError("To")
 }
 
-func (m *Msg) Body() string {
+func (m *Msg) PlainBody() string {
 	entity, e := m.Entity()
 	if e != nil {
 		return e.Error()
 	}
-	all, e := ioutil.ReadAll(entity.Body)
+	content, e := getContent(entity, "text/plain")
 	if e != nil {
 		return e.Error()
+	} else {
+		return content
 	}
-	return string(all)
+}
+
+func (m *Msg) HtmlBody() template.HTML {
+	entity, e := m.Entity()
+	if e != nil {
+		return template.HTML(e.Error())
+	}
+	content, e := getContent(entity, "text/html")
+	if e != nil {
+		return template.HTML(e.Error())
+	} else {
+		return template.HTML(content)
+	}
+}
+
+func getContent(ent *message.Entity, contentType string) (string, error) {
+	mpr := ent.MultipartReader()
+	if mpr != nil {
+		for ent2, e := mpr.NextPart(); e != io.EOF; {
+			c, e := getContentNoMultipart(ent2, contentType)
+			if e == nil {
+				return c, nil
+			}
+		}
+	}
+	return getContentNoMultipart(ent, contentType)
+}
+
+func getContentNoMultipart(ent *message.Entity, contentType string) (string, error) {
+	t, _, e := ent.Header.ContentType()
+	if e != nil {
+		return "", e
+	}
+	if t == contentType {
+		all, e := ioutil.ReadAll(ent.Body)
+		if e != nil {
+			return "", e
+		}
+		return string(all), nil
+	}
+	return "", errors.New("wrong content type " + contentType)
 }
 
 type ReceivedMsg struct {

@@ -1,6 +1,6 @@
 {{ define "content" }}
 <div class="grid">
-    <table>
+    <table class="hoverable">
         <thead>
             <tr>
                 <th>From</th>
@@ -12,7 +12,7 @@
             {{ range .Messages }}
             <tr>
                 <td>{{ .From }}</td>
-                <td>{{ .Subject }}</td>
+                <td><a href="/mailbox/{{$mbxName}}/{{.Id}}">{{ .Subject }}</a></td>
             </tr>
             {{end}}
         </tbody>

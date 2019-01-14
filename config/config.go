@@ -115,7 +115,8 @@ func SetupResolver() {
 	net.DefaultResolver = &net.Resolver{
 		PreferGo: true,
 		Dial: func(ctx context.Context, network, address string) (conn net.Conn, e error) {
-			return net.Dialer{}.DialContext(ctx, "udp", GetString(DnsServer))
+			d := net.Dialer{}
+			return d.DialContext(ctx, "udp", GetString(DnsServer))
 		},
 	}
 }

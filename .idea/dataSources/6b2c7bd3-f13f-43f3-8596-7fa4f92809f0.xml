@@ -62,6 +62,7 @@
     <column id="21" parent="7" name="messageid">
       <Position>2</Position>
       <DataType>integer|0s</DataType>
+      <NotNull>1</NotNull>
     </column>
     <column id="22" parent="7" name="flag">
       <Position>3</Position>
@@ -92,9 +93,9 @@
       <Position>4</Position>
       <DataType>integer|0s</DataType>
     </column>
-    <column id="29" parent="8" name="timestamp">
+    <column id="29" parent="8" name="ts">
       <Position>5</Position>
-      <DataType>integer|0s</DataType>
+      <DataType>timestamp|0s</DataType>
     </column>
     <key id="30" parent="8">
       <ColNames>id</ColNames>
@@ -117,9 +118,9 @@
       <Position>3</Position>
       <DataType>text|0s</DataType>
     </column>
-    <column id="35" parent="9" name="timestamp">
+    <column id="35" parent="9" name="ts">
       <Position>4</Position>
-      <DataType>integer|0s</DataType>
+      <DataType>timestamp|0s</DataType>
     </column>
     <column id="36" parent="9" name="retries">
       <Position>5</Position>
@@ -166,12 +167,16 @@
       <Position>3</Position>
       <DataType>blob|0s</DataType>
     </column>
-    <index id="47" parent="11" name="idx_users_email">
+    <column id="47" parent="11" name="admin">
+      <Position>4</Position>
+      <DataType>bool|0s</DataType>
+    </column>
+    <index id="48" parent="11" name="idx_users_email">
       <ColNames>email</ColNames>
       <ColumnCollations></ColumnCollations>
       <Unique>1</Unique>
     </index>
-    <key id="48" parent="11">
+    <key id="49" parent="11">
       <ColNames>id</ColNames>
       <Primary>1</Primary>
     </key>

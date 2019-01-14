@@ -67,6 +67,9 @@ th {
 tr {
     padding: 1em;
 }
+.hoverable tbody tr:hover {
+    border: 1px solid var(--col5);
+}
 th, tr:nth-child(2n) {
     background: var(--light-background);
 }

@@ -5,7 +5,7 @@
         <thead>
         <tr>
             <td>Email</td>
-            <td>Delete</td>
+            <td></td>
         </tr>
         </thead>
         <tbody>
@@ -13,7 +13,7 @@
             <tr>
                 <td>{{.Email}}</td>
                 <td>
-                    <form action="/deleteUser">
+                    <form action="deleteUser">
                         <input type="hidden" name="email" value="{{.Email}}">
                         {{ if eq .Email $.CurrentUser.Email}}
                             <input disabled type="submit" value="Delete">
@@ -26,5 +26,15 @@
         {{ end }}
         </tbody>
     </table>
+    <h2>Add a user</h2>
+    <form action="addUser">
+        <label>Email
+            <input name="email">
+        </label>
+        <label>Password
+            <input type="password">
+        </label>
+        <input type="submit" value="Add">
+    </form>
 </div>
 {{ end }}

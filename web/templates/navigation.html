@@ -3,6 +3,11 @@
         {{ range .Mailboxes }}
             <li><a href="/mailbox/{{.Name}}">{{.Name}}</a></li>
         {{ end }}
+        {{ if .CurrentUser.Admin }}
+        <li><a href="/admin/users">Users</a></li>
+        <li><a href="/admin/healthChecks">Health Checks</a></li>
+        <li><a href="/admin/security">Security</a></li>
+        {{ end }}
         <li><a href="/logout">Logout</a></li>
         <li><a href="/changePassword">Change Password</a></li>
     </ul>

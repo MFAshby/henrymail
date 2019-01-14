@@ -4,9 +4,6 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/tls"
-	"errors"
-	"fmt"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 	"henrymail/config"
 	"henrymail/database"
@@ -18,8 +15,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
-	"time"
 )
 
 func NewView(layout string, files ...string) *View {
@@ -68,6 +63,8 @@ type wa struct {
 	errorView          *View
 	changePasswordView *View
 	messageView        *View
+	usersView          *View
+	healthChecksView   *View
 }
 
 type AuthenticatedHandler = func(w http.ResponseWriter, r *http.Request, u *model.Usr)
@@ -79,154 +76,6 @@ func (wa *wa) renderError(w http.ResponseWriter, err error) {
 
 func (wa *wa) root(w http.ResponseWriter, r *http.Request, u *model.Usr) {
 	http.Redirect(w, r, "/mailbox/INBOX", http.StatusFound)
-}
-
-func (wa *wa) delete(w http.ResponseWriter, r *http.Request, u *model.Usr) {
-	email := r.FormValue("email")
-	if email == u.Email {
-		wa.renderError(w, errors.New("You cannot delete yourself"))
-		return
-	}
-	err := wa.db.DeleteUser(email)
-	if err != nil {
-		wa.renderError(w, err)
-	} else {
-		http.Redirect(w, r, "/", http.StatusFound)
-	}
-}
-
-func (wa *wa) add(w http.ResponseWriter, r *http.Request, u *model.Usr) {
-	email := r.FormValue("email")
-	password := r.FormValue("password")
-	_, err := wa.lg.NewUser(email, password, false)
-	if err != nil {
-		wa.renderError(w, err)
-	} else {
-		http.Redirect(w, r, "/", http.StatusFound)
-	}
-}
-
-type UserClaims struct {
-	jwt.StandardClaims
-	*model.Usr
-}
-
-func (c UserClaims) Valid() error {
-	return c.StandardClaims.Valid()
-}
-
-func (wa *wa) login(w http.ResponseWriter, r *http.Request) {
-	email := r.FormValue("email")
-	password := r.FormValue("password")
-	if email == "" {
-		wa.loginView.Render(w, nil)
-		return
-	}
-
-	usr, err := wa.lg.Login(email, password)
-	if err != nil {
-		wa.loginView.Render(w, err.Error())
-		return
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, UserClaims{
-		jwt.StandardClaims{},
-		usr,
-	})
-	tokenString, err := token.SignedString(wa.jwtSecret)
-	if err != nil {
-		wa.loginView.Render(w, err.Error())
-		return
-	}
-	http.SetCookie(w, &http.Cookie{
-		Name:     config.GetString(config.JwtCookieName),
-		Value:    tokenString,
-		HttpOnly: true,
-		Secure:   config.GetBool(config.WebAdminUseTls),
-		Domain:   config.GetString(config.ServerName),
-	})
-	http.Redirect(w, r, "/", http.StatusFound)
-}
-
-func (wa *wa) logout(w http.ResponseWriter, r *http.Request) {
-	http.SetCookie(w, &http.Cookie{
-		Name:     config.GetString(config.JwtCookieName),
-		Value:    "bogus",
-		Expires:  time.Now(),
-		HttpOnly: true,
-		Secure:   config.GetBool(config.WebAdminUseTls),
-		Domain:   config.GetString(config.ServerName),
-	})
-	wa.loginView.Render(w, nil)
-	w.WriteHeader(200)
-}
-
-func (wa *wa) checkAdmin(next AuthenticatedHandler) http.Handler {
-	return wa.checkLogin(func(w http.ResponseWriter, r *http.Request, user *model.Usr) {
-		if !user.Admin {
-			wa.renderError(w, errors.New("You are not an administrator"))
-			return
-		}
-		next(w, r, user)
-	})
-}
-
-func (wa *wa) checkLogin(next AuthenticatedHandler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cookie, e := r.Cookie(config.GetString(config.JwtCookieName))
-		if e == http.ErrNoCookie {
-			http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
-			return
-		}
-		var claims UserClaims
-		_, err := jwt.ParseWithClaims(cookie.Value, &claims, func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-			}
-			return wa.jwtSecret, nil
-		})
-		if err != nil {
-			http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
-			return
-		}
-		err = claims.Valid()
-		if err != nil {
-			http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
-			return
-		}
-		next(w, r, claims.Usr)
-	})
-}
-
-func (wa *wa) rotateJwt(w http.ResponseWriter, r *http.Request, u *model.Usr) {
-	wa.jwtSecret = generateAndSaveJwtSecret()
-	http.Redirect(w, r, "/", http.StatusFound)
-}
-
-func (wa *wa) changePassword(w http.ResponseWriter, r *http.Request, u *model.Usr) {
-	layoutData, e := wa.layoutData(u)
-	if e != nil {
-		wa.renderError(w, e)
-		return
-	}
-	data := struct {
-		LayoutData
-		Message string
-	}{
-		*layoutData,
-		"",
-	}
-	if r.Method == http.MethodPost {
-		password := r.FormValue("password")
-		password2 := r.FormValue("password2")
-		err := wa.lg.ChangePassword(u.Email, password, password2)
-		if err != nil {
-			data.Message = err.Error()
-		} else {
-			data.Message = "Password successfully changed"
-		}
-	}
-	wa.changePasswordView.Render(w, data)
 }
 
 func (wa *wa) layoutData(u *model.Usr) (*LayoutData, error) {
@@ -250,58 +99,6 @@ func (wa *wa) msgs(name string, u *model.Usr) (*model.Mbx, []*model.Msg, error) 
 		return nil, nil, e
 	}
 	return mbx, msgs, nil
-}
-
-func (wa *wa) mailbox(w http.ResponseWriter, r *http.Request, u *model.Usr) {
-	ld, e := wa.layoutData(u)
-	if e != nil {
-		wa.renderError(w, e)
-		return
-	}
-	mbx, msgs, e := wa.msgs(mux.Vars(r)["name"], u)
-	data := struct {
-		LayoutData
-		Mailbox  *model.Mbx
-		Messages []*model.Msg
-	}{
-		*ld,
-		mbx,
-		msgs,
-	}
-	wa.mailboxView.Render(w, data)
-}
-
-func (wa *wa) message(w http.ResponseWriter, r *http.Request, u *model.Usr) {
-	ld, e := wa.layoutData(u)
-	if e != nil {
-		wa.renderError(w, e)
-		return
-	}
-	name := mux.Vars(r)["name"]
-
-	id, e := strconv.Atoi(mux.Vars(r)["id"])
-	if e != nil {
-		wa.renderError(w, e)
-		return
-	}
-	_, msgs, e := wa.msgs(name, u)
-	if e != nil {
-		wa.renderError(w, e)
-		return
-	}
-	var sel *model.Msg
-	for _, msg := range msgs {
-		if msg.Id == int64(id) {
-			sel = msg
-		}
-	}
-	wa.messageView.Render(w, struct {
-		LayoutData
-		Message *model.Msg
-	}{
-		*ld,
-		sel,
-	})
 }
 
 func StartWebAdmin(lg database.Login, db database.Database, tlsC *tls.Config, pk *rsa.PublicKey) {
@@ -337,6 +134,8 @@ func StartWebAdmin(lg database.Login, db database.Database, tlsC *tls.Config, pk
 		mailboxView:        NewView("index.html", "web/templates/mailbox.html"),
 		changePasswordView: NewView("index.html", "web/templates/change_password.html"),
 		messageView:        NewView("index.html", "web/templates/message.html"),
+		usersView:          NewView("index.html", "web/templates/users.html"),
+		healthChecksView:   NewView("index.html", "web/templates/health_checks.html"),
 	}
 
 	if e != nil {
@@ -353,9 +152,11 @@ func StartWebAdmin(lg database.Login, db database.Database, tlsC *tls.Config, pk
 	router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(http.Dir("web/assets"))))
 
 	admin := router.PathPrefix("/admin/").Subrouter()
+	admin.Handle("/users", webAdmin.checkAdmin(webAdmin.users))
 	admin.Handle("/addUser", webAdmin.checkAdmin(webAdmin.add))
 	admin.Handle("/deleteUser", webAdmin.checkAdmin(webAdmin.delete))
 	admin.Handle("/rotateJwt", webAdmin.checkAdmin(webAdmin.rotateJwt))
+	admin.Handle("/healthChecks", webAdmin.checkAdmin(webAdmin.healthChecks))
 
 	server := &http.Server{Addr: config.GetString(config.WebAdminAddress), Handler: router}
 
@@ -386,21 +187,3 @@ func generateAndSaveJwtSecret() []byte {
 	}
 	return jwtSecret
 }
-
-/*
-func (wa *wa) runHealthChecks() HealthChecksViewModel {
-	txtRecords, _ := net.LookupTXT("mx._domainkey." + GetString(Domain))
-	actual := ""
-	if len(txtRecords) > 0 {
-		actual = txtRecords[0]
-	}
-	pkb, _ := x509.MarshalPKIXPublicKey(wa.pk)
-	buf := new(bytes.Buffer)
-	_, _ = base64.NewEncoder(base64.StdEncoding, buf).Write(pkb)
-	expected := "v=dkim1; k=rsa; p=" + buf.String()
-	return HealthChecksViewModel{
-		TxtRecordIs:       actual,
-		TxtRecordShouldBe: expected,
-	}
-}
-*/
