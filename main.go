@@ -36,8 +36,8 @@ func main() {
 }
 
 func SeedData(login database.Login) {
-	//pw := randSeq(16)
-	pw := "hello"
+	pw := randSeq(16)
+	//pw := "hello"
 	usr, err := login.NewUser(config.GetString(config.AdminUsername)+"@"+config.GetString(config.Domain),
 		pw, true)
 	if err == nil {
