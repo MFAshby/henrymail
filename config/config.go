@@ -7,6 +7,14 @@ import (
 	"net"
 )
 
+type CertMode string
+
+const (
+	AutoCert   CertMode = "AutoCert"
+	Given               = "Given"
+	SelfSigned          = "SelfSigned"
+)
+
 const (
 	// The domain we're serving email for (e.g. example.com)
 	Domain = "Domain"
@@ -29,7 +37,7 @@ const (
 	ImapUseTls     = "ImapUseTls"
 	WebAdminUseTls = "WebAdminUseTls"
 
-	UseAutoCert = "UseAutoCert"
+	CertificateMode = "CertificateMode"
 	// If autocert is enabled
 	AutoCertEmail    = "AutoCertEmail"
 	AutoCertCacheDir = "AutoCertCacheDir"
@@ -71,7 +79,7 @@ func SetupConfig() {
 	viper.SetDefault(WebAdminAddress, ":2003")
 	viper.SetDefault(WebAdminUseTls, false)
 
-	viper.SetDefault(UseAutoCert, true)
+	viper.SetDefault(CertificateMode, AutoCert)
 	viper.SetDefault(AutoCertEmail, "admin@example.com")
 	viper.SetDefault(AutoCertCacheDir, "keys")
 	viper.SetDefault(CertificateFile, "/etc/letsencrypt/live/example.com/fullchain.pem")
