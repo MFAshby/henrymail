@@ -16,7 +16,7 @@ func (wa *wa) delete(w http.ResponseWriter, r *http.Request, u *model.Usr) {
 	if err != nil {
 		wa.renderError(w, err)
 	} else {
-		http.Redirect(w, r, "/", http.StatusFound)
+		http.Redirect(w, r, "users", http.StatusFound)
 	}
 }
 
@@ -27,7 +27,7 @@ func (wa *wa) add(w http.ResponseWriter, r *http.Request, u *model.Usr) {
 	if err != nil {
 		wa.renderError(w, err)
 	} else {
-		http.Redirect(w, r, "/", http.StatusFound)
+		http.Redirect(w, r, "users", http.StatusFound)
 	}
 }
 

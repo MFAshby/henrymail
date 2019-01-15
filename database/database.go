@@ -568,7 +568,7 @@ func NewDatabase() Database {
 			uidnext integer default 1,
 			uidvalidity integer default 1,
 			subscribed bool default true,
-			FOREIGN KEY(userid) REFERENCES users(id)
+			FOREIGN KEY(userid) REFERENCES users(id) ON DELETE CASCADE 
 		);
 		CREATE TABLE IF NOT EXISTS messages (
 			id integer primary key,
@@ -576,13 +576,13 @@ func NewDatabase() Database {
 			content blob,
 			uid integer,
 			ts timestamp, 
-			FOREIGN KEY (mailboxid) REFERENCES mailboxes(id)
+			FOREIGN KEY (mailboxid) REFERENCES mailboxes(id) ON DELETE CASCADE 
 		);
 		CREATE TABLE IF NOT EXISTS messageflags (
 			id integer primary key,
 			messageid integer not null,
 			flag text,
-			FOREIGN KEY (messageid) REFERENCES messages(id)
+			FOREIGN KEY (messageid) REFERENCES messages(id) ON DELETE CASCADE 
 		);
 		CREATE TABLE IF NOT EXISTS queue (
 		  	id integer primary key,

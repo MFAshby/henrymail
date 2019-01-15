@@ -136,6 +136,7 @@ func StartWebAdmin(lg database.Login, db database.Database, tlsC *tls.Config, pk
 		messageView:        NewView("index.html", "web/templates/message.html"),
 		usersView:          NewView("index.html", "web/templates/users.html"),
 		healthChecksView:   NewView("index.html", "web/templates/health_checks.html"),
+		errorView:          NewView("error.html", "web/templates/error.html"),
 	}
 
 	if e != nil {
