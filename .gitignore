@@ -2,3 +2,5 @@ henrymail
 henrymail.db
 henrymail.prop
 keys/
+web/embedded.go
+.idea/

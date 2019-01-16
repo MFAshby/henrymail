@@ -77,6 +77,7 @@ type wa struct {
 	messageView        *View
 	usersView          *View
 	healthChecksView   *View
+	securityView       *View
 }
 
 type AuthenticatedHandler = func(w http.ResponseWriter, r *http.Request, u *model.Usr)
@@ -133,12 +134,10 @@ func StartWebAdmin(lg database.Login, db database.Database, tlsC *tls.Config, pk
 		messageView:        NewView("index.html", "/templates/message.html"),
 		usersView:          NewView("index.html", "/templates/users.html"),
 		healthChecksView:   NewView("index.html", "/templates/health_checks.html"),
+		securityView:       NewView("index.html", "/templates/security.html"),
 		errorView:          NewView("error.html", "/templates/error.html"),
 	}
 
-	if e != nil {
-		log.Fatal(e)
-	}
 	router := mux.NewRouter()
 	router.HandleFunc("/login", webAdmin.login)
 	router.HandleFunc("/logout", webAdmin.logout)
@@ -148,10 +147,12 @@ func StartWebAdmin(lg database.Login, db database.Database, tlsC *tls.Config, pk
 	router.Handle("/", webAdmin.checkLogin(webAdmin.root))
 
 	router.PathPrefix("/assets/").Handler(GetEmbeddedContent())
+
 	admin := router.PathPrefix("/admin/").Subrouter()
 	admin.Handle("/users", webAdmin.checkAdmin(webAdmin.users))
 	admin.Handle("/addUser", webAdmin.checkAdmin(webAdmin.add))
 	admin.Handle("/deleteUser", webAdmin.checkAdmin(webAdmin.delete))
+	admin.Handle("/security", webAdmin.checkAdmin(webAdmin.security))
 	admin.Handle("/rotateJwt", webAdmin.checkAdmin(webAdmin.rotateJwt))
 	admin.Handle("/healthChecks", webAdmin.checkAdmin(webAdmin.healthChecks))
 

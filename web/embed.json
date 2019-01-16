@@ -13,7 +13,7 @@
     "\\.css$": "text/css",
     "\\.js$": "application/javascript"
   },
-  "CompressPattern": "\\.(css|js|html)$",
+  "CompressPattern": "",
   "NoCompressPattern": "\\.(jpe?g|png|gif|woff2?|eot|ttf|ico)$",
   "OverrideModDate": false
 }

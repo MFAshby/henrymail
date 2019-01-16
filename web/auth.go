@@ -29,7 +29,7 @@ func (wa *wa) login(w http.ResponseWriter, r *http.Request) {
 
 	usr, err := wa.lg.Login(email, password)
 	if err != nil {
-		wa.loginView.Render(w, err.Error())
+		wa.loginView.Render(w, err)
 		return
 	}
 
@@ -39,7 +39,7 @@ func (wa *wa) login(w http.ResponseWriter, r *http.Request) {
 	})
 	tokenString, err := token.SignedString(wa.jwtSecret)
 	if err != nil {
-		wa.loginView.Render(w, err.Error())
+		wa.loginView.Render(w, err)
 		return
 	}
 	http.SetCookie(w, &http.Cookie{
