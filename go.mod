@@ -2,6 +2,7 @@ module henrymail
 
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
+	github.com/aprice/embed v0.0.0-20181126214606-b9ceb1f6d22d
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/emersion/go-dkim v0.0.0-20181215182626-18000c30d4b8
 	github.com/emersion/go-imap v1.0.0-beta.1

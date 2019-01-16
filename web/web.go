@@ -14,19 +14,31 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"path/filepath"
+	"path"
 )
+
+//go:generate embed -c "embed.json"
 
 func NewView(layout string, files ...string) *View {
 	files = append(files,
-		"web/templates/index.html",
-		"web/templates/navigation.html",
-		"web/templates/header.html",
-		"web/templates/footer.html",
+		"/templates/index.html",
+		"/templates/navigation.html",
+		"/templates/header.html",
+		"/templates/footer.html",
 	)
-	t, err := template.ParseFiles(files...)
-	if err != nil {
-		log.Fatal(err)
+	var t *template.Template = nil
+	for _, file := range files {
+		contents, e := GetEmbeddedContent().GetContents(file)
+		if e != nil {
+			log.Fatal(e)
+		}
+		name := path.Base(file)
+		if t == nil {
+			t = template.New(name)
+		} else {
+			t = t.New(name)
+		}
+		template.Must(t.Parse(string(contents)))
 	}
 	return &View{
 		Template: t,
@@ -36,7 +48,7 @@ func NewView(layout string, files ...string) *View {
 
 type View struct {
 	Template *template.Template
-	Layout   string
+	Layout   string // This is the root view component
 }
 
 func (v *View) Render(w http.ResponseWriter, viewModel interface{}) {
@@ -110,33 +122,18 @@ func StartWebAdmin(lg database.Login, db database.Database, tlsC *tls.Config, pk
 		log.Fatal(e)
 	}
 
-	// Read the templates
-	tp := template.New("html")
-	e = filepath.Walk("web/templates", func(path string, info os.FileInfo, err error) error {
-		if !info.IsDir() {
-			_, err = tp.ParseFiles(path)
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-	if e != nil {
-		log.Fatal(e)
-	}
-
 	webAdmin := wa{
 		lg:                 lg,
 		db:                 db,
 		jwtSecret:          jwtSecret,
 		pk:                 pk,
-		loginView:          NewView("login.html", "web/templates/login.html"),
-		mailboxView:        NewView("index.html", "web/templates/mailbox.html"),
-		changePasswordView: NewView("index.html", "web/templates/change_password.html"),
-		messageView:        NewView("index.html", "web/templates/message.html"),
-		usersView:          NewView("index.html", "web/templates/users.html"),
-		healthChecksView:   NewView("index.html", "web/templates/health_checks.html"),
-		errorView:          NewView("error.html", "web/templates/error.html"),
+		loginView:          NewView("login.html", "/templates/login.html"),
+		mailboxView:        NewView("index.html", "/templates/mailbox.html"),
+		changePasswordView: NewView("index.html", "/templates/change_password.html"),
+		messageView:        NewView("index.html", "/templates/message.html"),
+		usersView:          NewView("index.html", "/templates/users.html"),
+		healthChecksView:   NewView("index.html", "/templates/health_checks.html"),
+		errorView:          NewView("error.html", "/templates/error.html"),
 	}
 
 	if e != nil {
@@ -150,8 +147,7 @@ func StartWebAdmin(lg database.Login, db database.Database, tlsC *tls.Config, pk
 	router.Handle("/mailbox/{name}/{id}", webAdmin.checkLogin(webAdmin.message))
 	router.Handle("/", webAdmin.checkLogin(webAdmin.root))
 
-	router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(http.Dir("web/assets"))))
-
+	router.PathPrefix("/assets/").Handler(GetEmbeddedContent())
 	admin := router.PathPrefix("/admin/").Subrouter()
 	admin.Handle("/users", webAdmin.checkAdmin(webAdmin.users))
 	admin.Handle("/addUser", webAdmin.checkAdmin(webAdmin.add))

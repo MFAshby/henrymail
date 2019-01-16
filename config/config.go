@@ -79,6 +79,11 @@ func SetupConfig() {
 	viper.SetDefault(WebAdminAddress, ":2003")
 	viper.SetDefault(WebAdminUseTls, false)
 
+	viper.SetDefault(MtaUseTls, true)
+	viper.SetDefault(MsaUseTls, true)
+	viper.SetDefault(ImapUseTls, true)
+	viper.SetDefault(WebAdminUseTls, true)
+
 	viper.SetDefault(CertificateMode, AutoCert)
 	viper.SetDefault(AutoCertEmail, "admin@example.com")
 	viper.SetDefault(AutoCertCacheDir, "keys")

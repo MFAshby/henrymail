@@ -1,0 +1,19 @@
+{
+  "RootPath": ".",
+  "Recurse": true,
+  "IncludePattern": "",
+  "ExcludePattern": "(^\\.|\\.go$)",
+  "OutputPath": "embedded.go",
+  "BuildConstraints": "",
+  "PackageName": "web",
+  "DevOutputPath": "",
+  "DevBuildConstraints": "",
+  "MinifyTypes": {
+    "\\.html?$": "text/html",
+    "\\.css$": "text/css",
+    "\\.js$": "application/javascript"
+  },
+  "CompressPattern": "\\.(css|js|html)$",
+  "NoCompressPattern": "\\.(jpe?g|png|gif|woff2?|eot|ttf|ico)$",
+  "OverrideModDate": false
+}
