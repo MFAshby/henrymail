@@ -3,6 +3,7 @@ package main
 import (
 	"henrymail/config"
 	"henrymail/database"
+	"henrymail/dkim"
 	"henrymail/imap"
 	"henrymail/processors"
 	"henrymail/smtp"
@@ -19,17 +20,22 @@ func main() {
 	db := database.NewDatabase()
 	login := database.NewLogin(db)
 
-	// Setup submission agent processing chain
+	// submission agent processing chain
 	var msaChain processors.MsgProcessor = processors.NewSender(db)
 	if config.GetBool(config.DkimSign) {
-		msaChain = processors.NewDkimSigner(processors.GetOrCreateDkim(), msaChain)
+		msaChain = processors.NewDkimSigner(dkim.GetOrCreateDkim(), msaChain)
 	}
 
-	// Setup transfer agent processing chain
+	// transfer agent processing chain
 	mtaChain := processors.NewSaver(db)
 	if config.GetBool(config.DkimVerify) {
-		msaChain = processors.NewDkimVerifier(msaChain)
+		mtaChain = processors.NewDkimVerifier(mtaChain)
 	}
+
+	// TODO
+	// SPF checker
+	// Virus scanner
+	// Spam filter
 
 	SeedData(login)
 
@@ -37,6 +43,10 @@ func main() {
 	smtp.StartMta(mtaChain, tlsConfig)
 	imap.StartImap(login, db, tlsConfig)
 	web.StartWebAdmin(login, db, tlsConfig)
+
+	if config.GetBool(config.FakeDns) {
+		StartFakeDns(config.GetString(config.FakeDnsAddress), "udp")
+	}
 
 	// Wait for exit
 	select {}

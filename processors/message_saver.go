@@ -19,7 +19,8 @@ func (s *saver) Process(wrap *model.ReceivedMsg) error {
 	// Find all the inboxes for each user, if we can't do them all we'll do none.
 	inboxIds := make(map[string]int64)
 	for _, to := range wrap.To {
-		ibxId, e := s.db.GetInboxId(to)
+		username := strings.Split(to, "@")[0]
+		ibxId, e := s.db.GetInboxId(username)
 		if e != nil {
 			return database.NotFound
 		}

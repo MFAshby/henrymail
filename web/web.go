@@ -2,13 +2,11 @@ package web
 
 import (
 	"crypto/rand"
-	"crypto/rsa"
 	"crypto/tls"
 	"github.com/gorilla/mux"
 	"henrymail/config"
 	"henrymail/database"
 	"henrymail/model"
-	"henrymail/processors"
 	"html/template"
 	"io/ioutil"
 	"log"
@@ -69,7 +67,6 @@ type wa struct {
 	lg        database.Login
 	db        database.Database
 	jwtSecret []byte
-	dkim      *rsa.PrivateKey
 
 	loginView          *View
 	mailboxView        *View
@@ -123,12 +120,10 @@ func StartWebAdmin(lg database.Login, db database.Database, tlsC *tls.Config) {
 	} else if e != nil {
 		log.Fatal(e)
 	}
-	dkim := processors.GetOrCreateDkim()
 	webAdmin := wa{
 		lg:                 lg,
 		db:                 db,
 		jwtSecret:          jwtSecret,
-		dkim:               dkim,
 		loginView:          NewView("login.html", "/templates/login.html"),
 		mailboxView:        NewView("index.html", "/templates/mailbox.html"),
 		changePasswordView: NewView("index.html", "/templates/change_password.html"),

@@ -82,7 +82,7 @@ func (s *sender) sendTo(to, from string, content []byte) error {
  * the message. Error if anything went wrong.
  */
 func (s *sender) sendToHost(to, from, host string, content []byte) error {
-	client, err := smtp.Dial(host + ":25")
+	client, err := smtp.Dial(host + config.GetString(config.MtaSendPort))
 	if err != nil {
 		return err
 	}

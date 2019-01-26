@@ -1,0 +1,24 @@
+; This configuration is for local testing only
+; You can configure your mail client to access on the ports listed below
+; You can ONLY send email to yourself or others on the same domain
+; The Fake DNS server causes the application to just talk back to itself.
+; TLS is disabled
+; Everything runs on a port above 1000
+Domain = example.com
+ServerName = mail.example.com
+AutoCertEmail = admin@example.com
+AdminUsername = admin
+AdminPassword = admin
+MsaAddress = :1587
+MtaAddress = :1025
+ImapAddress = :1143
+WebAdminAddress = :2003
+MtaUseTls = false
+MsaUseTls = false
+ImapUseTls = false
+WebAdminUseTls = false
+UseAutoCert = false
+
+DnsServer = 127.0.0.1:2053
+FakeDns = true
+MtaSendPort = :1025

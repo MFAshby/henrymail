@@ -1,10 +1,8 @@
 package web
 
 import (
-	"bytes"
-	"crypto/x509"
-	"encoding/base64"
 	"henrymail/config"
+	"henrymail/dkim"
 	"henrymail/model"
 	"net"
 	"net/http"
@@ -21,11 +19,12 @@ func (wa *wa) healthChecks(w http.ResponseWriter, r *http.Request, u *model.Usr)
 	if len(txtRecords) > 0 {
 		actual = txtRecords[0]
 	}
-	pkb, _ := x509.MarshalPKIXPublicKey(wa.dkim.PublicKey)
-	buf := new(bytes.Buffer)
-	_, _ = base64.NewEncoder(base64.StdEncoding, buf).Write(pkb)
-	expected := "v=dkim1; k=rsa; p=" + buf.String()
 
+	dkimRecordString, e := dkim.GetDkimRecordString()
+	if e != nil {
+		wa.renderError(w, e)
+		return
+	}
 	data := struct {
 		LayoutData
 		TxtRecordIs       string
@@ -33,7 +32,7 @@ func (wa *wa) healthChecks(w http.ResponseWriter, r *http.Request, u *model.Usr)
 	}{
 		LayoutData:        *ld,
 		TxtRecordIs:       actual,
-		TxtRecordShouldBe: expected,
+		TxtRecordShouldBe: dkimRecordString,
 	}
 	wa.healthChecksView.Render(w, data)
 }

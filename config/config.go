@@ -22,6 +22,7 @@ const (
 	// Network
 	// The public name of this server (e.g. mail.example.com)
 	ServerName = "ServerName"
+
 	// Ports / addresses to listen on for various services
 	MsaAddress      = "MsaAddress"
 	MtaAddress      = "MtaAddress"
@@ -29,7 +30,9 @@ const (
 	WebAdminAddress = "WebAdminAddress"
 
 	// DNS
-	DnsServer = "DnsServer"
+	DnsServer      = "DnsServer"
+	FakeDns        = "FakeDns" // For testing only!
+	FakeDnsAddress = "FakeDnsAddress"
 
 	// TLS
 	MtaUseTls      = "MtaUseTls"
@@ -73,16 +76,20 @@ const (
 	// Web auth tokens
 	JwtTokenSecretFile = "JwtTokenSecretFile"
 	JwtCookieName      = "JwtCookieName"
+
+	// Port our message sender will try to connect to MTAs on
+	MtaSendPort = "MtaSendPort"
 )
 
 func SetupConfig() {
 	viper.SetDefault(Domain, "example.com")
+	viper.SetDefault(ServerName, "mail.example.com")
 
-	viper.SetDefault(MsaAddress, ":1587")
-	viper.SetDefault(MtaAddress, ":1025")
-	viper.SetDefault(ImapAddress, ":1143")
-	viper.SetDefault(WebAdminAddress, ":2003")
-	viper.SetDefault(WebAdminUseTls, false)
+	viper.SetDefault(MsaAddress, ":587")
+	viper.SetDefault(MtaAddress, ":25")
+	viper.SetDefault(ImapAddress, ":143")
+	viper.SetDefault(WebAdminAddress, ":443")
+	viper.SetDefault(WebAdminUseTls, true)
 
 	viper.SetDefault(MtaUseTls, true)
 	viper.SetDefault(MsaUseTls, true)
@@ -118,6 +125,11 @@ func SetupConfig() {
 	viper.SetDefault(JwtCookieName, "henrymail_jwt_token")
 
 	viper.SetDefault(DnsServer, "208.67.222.222:53") // OpenDNS
+
+	// For running the full stack locally
+	viper.SetDefault(FakeDns, false)
+	viper.SetDefault(FakeDnsAddress, "127.0.0.1:2053")
+	viper.SetDefault(MtaSendPort, ":25")
 
 	viper.SetConfigName("henrymail")
 	viper.AddConfigPath("/etc/henrymail/")
