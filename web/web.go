@@ -86,7 +86,7 @@ func (wa *wa) renderError(w http.ResponseWriter, err error) {
 }
 
 func (wa *wa) root(w http.ResponseWriter, r *http.Request, u *model.Usr) {
-	http.Redirect(w, r, "/mailbox/INBOX", http.StatusFound)
+	http.Redirect(w, r, "/changePassword", http.StatusFound)
 }
 
 func (wa *wa) layoutData(u *model.Usr) (*LayoutData, error) {

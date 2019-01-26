@@ -22,3 +22,4 @@ UseAutoCert = false
 DnsServer = 127.0.0.1:2053
 FakeDns = true
 MtaSendPort = :1025
+CookieDomainOverride = localhost

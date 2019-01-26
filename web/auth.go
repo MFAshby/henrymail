@@ -47,7 +47,7 @@ func (wa *wa) login(w http.ResponseWriter, r *http.Request) {
 		Value:    tokenString,
 		HttpOnly: true,
 		Secure:   config.GetBool(config.WebAdminUseTls),
-		Domain:   config.GetString(config.ServerName),
+		Domain:   config.GetCookieDomain(),
 		Expires:  time.Now().Add(time.Hour * 240),
 	})
 	http.Redirect(w, r, "/", http.StatusFound)
@@ -60,7 +60,7 @@ func (wa *wa) logout(w http.ResponseWriter, r *http.Request) {
 		Expires:  time.Now(),
 		HttpOnly: true,
 		Secure:   config.GetBool(config.WebAdminUseTls),
-		Domain:   config.GetString(config.ServerName),
+		Domain:   config.GetCookieDomain(),
 	})
 	wa.loginView.Render(w, nil)
 	w.WriteHeader(200)

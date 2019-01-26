@@ -74,8 +74,9 @@ const (
 	// SPF
 
 	// Web auth tokens
-	JwtTokenSecretFile = "JwtTokenSecretFile"
-	JwtCookieName      = "JwtCookieName"
+	JwtTokenSecretFile   = "JwtTokenSecretFile"
+	JwtCookieName        = "JwtCookieName"
+	CookieDomainOverride = "CookieDomainOverride"
 
 	// Port our message sender will try to connect to MTAs on
 	MtaSendPort = "MtaSendPort"
@@ -130,6 +131,7 @@ func SetupConfig() {
 	viper.SetDefault(FakeDns, false)
 	viper.SetDefault(FakeDnsAddress, "127.0.0.1:2053")
 	viper.SetDefault(MtaSendPort, ":25")
+	viper.SetDefault(CookieDomainOverride, "")
 
 	viper.SetConfigName("henrymail")
 	viper.AddConfigPath("/etc/henrymail/")
@@ -167,4 +169,12 @@ func GetBool(key string) bool {
 
 func GetStringSlice(key string) []string {
 	return viper.GetStringSlice(key)
+}
+
+func GetCookieDomain() string {
+	override := GetString(CookieDomainOverride)
+	if override != "" {
+		return override
+	}
+	return GetString(ServerName)
 }
