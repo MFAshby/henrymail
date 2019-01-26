@@ -58,6 +58,7 @@ const (
 
 	// Admin stuff
 	AdminUsername    = "AdminUsername"
+	AdminPassword    = "AdminPassword"
 	DefaultMailboxes = "DefaultMailboxes"
 
 	// DKIM
@@ -100,6 +101,7 @@ func SetupConfig() {
 	viper.SetDefault(RetryCount, 3)
 
 	viper.SetDefault(AdminUsername, "admin")
+	viper.SetDefault(AdminPassword, "") // Empty means it will be generated
 	viper.SetDefault(DefaultMailboxes, []string{"INBOX", "Trash", "Sent", "Drafts"})
 
 	viper.SetDefault(DkimPrivateKeyFile, "keys/dkim-private.pem")

@@ -15,16 +15,16 @@ import (
 
 // Interface
 type Database interface {
-	InsertUser(email string, passwordBytes []byte, admin bool) (*model.Usr, error)
-	GetUserAndPassword(email string) (*model.Usr, []byte, error)
+	InsertUser(username string, passwordBytes []byte, admin bool) (*model.Usr, error)
+	GetUserAndPassword(username string) (*model.Usr, []byte, error)
 	GetUsers() ([]*model.Usr, error)
-	DeleteUser(email string) error
+	DeleteUser(username string) error
 
 	InsertMailbox(name string, usrId int64) (*model.Mbx, error)
 	GetMailboxes(subscribed bool, usrId int64) ([]*model.Mbx, error)
 	GetMailboxByName(name string, usrId int64) (*model.Mbx, error)
 	GetMailboxById(id int64) (*model.Mbx, error)
-	GetInboxId(email string) (int64, error)
+	GetInboxId(username string) (int64, error)
 	SetMailboxSubscribed(mbxId int64, subscribed bool) error
 	RenameMailbox(userId int64, originalName, newName string) error
 	DeleteMailbox(name string, usrId int64) error
@@ -38,7 +38,7 @@ type Database interface {
 	GetQueue() ([]*model.QueuedMsg, error)
 	IncrementRetries(queueId int64) error
 	DeleteQueue(queueId int64) error
-	SetUserPassword(email string, passwordBytes []byte) error
+	SetUserPassword(username string, passwordBytes []byte) error
 }
 
 var NotFound = errors.New("not found")
@@ -48,14 +48,14 @@ type sqlDb struct {
 	mut *sync.RWMutex
 }
 
-func (db *sqlDb) SetUserPassword(email string, passwordBytes []byte) error {
+func (db *sqlDb) SetUserPassword(username string, passwordBytes []byte) error {
 	db.mut.Lock()
 	defer db.mut.Unlock()
 	return checkOneRowAffected(db.db.Exec(`
 		UPDATE users
 		SET passwordBytes = ?
-		WHERE email = ?
-	`, passwordBytes, email))
+		WHERE username = ?
+	`, passwordBytes, username))
 }
 
 func (db *sqlDb) SetMessageFlags(msgId int64, flags []string) error {
@@ -195,7 +195,7 @@ func (db *sqlDb) InsertQueue(from, to string, content []byte, timestamp time.Tim
 	return msg, checkErrorsSetId(&msg.HasId, r, e)
 }
 
-func (db *sqlDb) GetInboxId(email string) (int64, error) {
+func (db *sqlDb) GetInboxId(username string) (int64, error) {
 	db.mut.RLock()
 	defer db.mut.RUnlock()
 	var ibxId int64
@@ -203,8 +203,8 @@ func (db *sqlDb) GetInboxId(email string) (int64, error) {
 		SELECT mbx.id 
 		FROM mailboxes mbx, users u 
 		WHERE mbx.userid = u.id
-		AND u.email = ? 
-	`, email).Scan(&ibxId)
+		AND u.username = ? 
+	`, username).Scan(&ibxId)
 	if e == sql.ErrNoRows {
 		e = NotFound
 	}
@@ -477,20 +477,20 @@ func (db *sqlDb) DeleteMailbox(name string, usrId int64) error {
 	`, name, usrId))
 }
 
-func (db *sqlDb) DeleteUser(email string) error {
+func (db *sqlDb) DeleteUser(username string) error {
 	db.mut.Lock()
 	defer db.mut.Unlock()
 	return checkOneRowAffected(db.db.Exec(`
 		DELETE FROM users 
-		WHERE email = ?
-	`, email))
+		WHERE username = ?
+	`, username))
 }
 
 func (db *sqlDb) GetUsers() ([]*model.Usr, error) {
 	db.mut.RLock()
 	defer db.mut.RUnlock()
 	rows, e := db.db.Query(`
-		SELECT id, email, admin 
+		SELECT id, username, admin 
 		FROM users
 	`)
 	if e != nil {
@@ -499,7 +499,7 @@ func (db *sqlDb) GetUsers() ([]*model.Usr, error) {
 	users := make([]*model.Usr, 0)
 	for rows.Next() {
 		u := &model.Usr{}
-		e := rows.Scan(&u.Id, &u.Email, &u.Admin)
+		e := rows.Scan(&u.Id, &u.Username, &u.Admin)
 		if e != nil {
 			return nil, e
 		}
@@ -508,17 +508,17 @@ func (db *sqlDb) GetUsers() ([]*model.Usr, error) {
 	return users, nil
 }
 
-func (db *sqlDb) GetUserAndPassword(email string) (*model.Usr, []byte, error) {
+func (db *sqlDb) GetUserAndPassword(username string) (*model.Usr, []byte, error) {
 	db.mut.RLock()
 	defer db.mut.RUnlock()
 	row := db.db.QueryRow(`
-		SELECT id, email, passwordBytes, admin 
+		SELECT id, username, passwordBytes, admin 
 		FROM users 
-		WHERE Email = ?
-	`, email)
+		WHERE username = ?
+	`, username)
 	u := &model.Usr{}
 	var pw []byte
-	e := row.Scan(&u.Id, &u.Email, &pw, &u.Admin)
+	e := row.Scan(&u.Id, &u.Username, &pw, &u.Admin)
 	if e == sql.ErrNoRows {
 		return nil, nil, NotFound
 	}
@@ -531,16 +531,16 @@ func (db *sqlDb) GetUserAndPassword(email string) (*model.Usr, []byte, error) {
 	return u, pw, nil
 }
 
-func (db *sqlDb) InsertUser(email string, passwordBytes []byte, admin bool) (*model.Usr, error) {
+func (db *sqlDb) InsertUser(username string, passwordBytes []byte, admin bool) (*model.Usr, error) {
 	db.mut.Lock()
 	defer db.mut.Unlock()
 	usr := &model.Usr{
-		Email: email,
+		Username: username,
 	}
 	res, e := db.db.Exec(`
-		INSERT INTO users (email, passwordBytes, admin) 
+		INSERT INTO users (username, passwordBytes, admin) 
 		VALUES (?, ?, ?)
-	`, email, passwordBytes, admin)
+	`, username, passwordBytes, admin)
 	return usr, checkErrorsSetId(&usr.HasId, res, e)
 }
 
@@ -554,12 +554,12 @@ func NewDatabase() Database {
 
 		CREATE TABLE IF NOT EXISTS users (
 			id integer primary key,
-			email text, 
+			username text, 
 			passwordBytes blob,
 			admin bool
 		);
-		CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users (
-			email
+		CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users (
+			username
 		);
 		CREATE TABLE IF NOT EXISTS mailboxes (
 			id integer primary key,

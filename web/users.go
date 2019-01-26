@@ -7,12 +7,12 @@ import (
 )
 
 func (wa *wa) delete(w http.ResponseWriter, r *http.Request, u *model.Usr) {
-	email := r.FormValue("email")
-	if email == u.Email {
+	username := r.FormValue("username")
+	if username == u.Username {
 		wa.renderError(w, errors.New("You cannot delete yourself"))
 		return
 	}
-	err := wa.db.DeleteUser(email)
+	err := wa.db.DeleteUser(username)
 	if err != nil {
 		wa.renderError(w, err)
 	} else {
@@ -21,9 +21,9 @@ func (wa *wa) delete(w http.ResponseWriter, r *http.Request, u *model.Usr) {
 }
 
 func (wa *wa) add(w http.ResponseWriter, r *http.Request, u *model.Usr) {
-	email := r.FormValue("email")
+	username := r.FormValue("username")
 	password := r.FormValue("password")
-	_, err := wa.lg.NewUser(email, password, false)
+	_, err := wa.lg.NewUser(username, password, false)
 	if err != nil {
 		wa.renderError(w, err)
 	} else {

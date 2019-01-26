@@ -3,6 +3,8 @@ package database
 import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/spf13/viper"
+	"henrymail/config"
+	"henrymail/model"
 	"testing"
 	"time"
 )
@@ -10,23 +12,23 @@ import (
 var date = time.Date(2018, 12, 1, 0, 0, 0, 0, time.UTC)
 
 func withDb(t *testing.T, f func(t *testing.T, d Database)) {
-	viper.Set(DbConnectionStringKey, "file::memory:?mode=memory&cache=shared")
-	viper.Set(DbDriverNameKey, "sqlite3")
+	viper.Set(config.DbConnectionString, "file::memory:?mode=memory&cache=shared")
+	viper.Set(config.DbDriverName, "sqlite3")
 	database := NewDatabase()
 	f(t, database)
 }
 
 func TestUserCrud(t *testing.T) {
 	withDb(t, func(t *testing.T, d Database) {
-		email := "hello@blah.com"
+		username := "hello"
 		// CREATE
-		usr, e := d.InsertUser(email, []byte("testing"), false)
+		usr, e := d.InsertUser(username, []byte("testing"), false)
 		if e != nil {
 			t.Error(e)
 		}
 
 		// READ
-		usr2, _, e := d.GetUserAndPassword(email)
+		usr2, _, e := d.GetUserAndPassword(username)
 		if diff := cmp.Diff(usr, usr2); diff != "" {
 			t.Errorf("User different after GetUserAndPassword %s", diff)
 		}
@@ -35,16 +37,16 @@ func TestUserCrud(t *testing.T) {
 		if e != nil {
 			t.Error(e)
 		}
-		if diff := cmp.Diff(usrs, []*Usr{usr}); diff != "" {
+		if diff := cmp.Diff(usrs, []*model.Usr{usr}); diff != "" {
 			t.Errorf("User different after GetUsers %s", diff)
 		}
 
 		// DELETE
-		e = d.DeleteUser(email)
+		e = d.DeleteUser(username)
 		if e != nil {
 			t.Error(e)
 		}
-		_, _, e = d.GetUserAndPassword(email)
+		_, _, e = d.GetUserAndPassword(username)
 		if e == nil {
 			t.Error("Expected error retrieving after deletion")
 		}
@@ -73,7 +75,7 @@ func TestMessageCrud(t *testing.T) {
 		if e != nil {
 			t.Error(e)
 		}
-		if dif := cmp.Diff(msgs, []*Msg{msg}); dif != "" {
+		if dif := cmp.Diff(msgs, []*model.Msg{msg}); dif != "" {
 			t.Errorf("GetMessages comparison failed: %s", dif)
 		}
 
@@ -84,7 +86,7 @@ func TestMessageCrud(t *testing.T) {
 		}
 		msgs, _ = d.GetMessages(mbx.Id, -1, -1)
 		msg.Flags = []string{"three"}
-		if dif := cmp.Diff(msgs, []*Msg{msg}); dif != "" {
+		if dif := cmp.Diff(msgs, []*model.Msg{msg}); dif != "" {
 			t.Errorf("GetMessages comparison failed after updating flags: %s", dif)
 		}
 
@@ -98,7 +100,7 @@ func TestMessageCrud(t *testing.T) {
 		if e != nil {
 			t.Error(e)
 		}
-		if dif := cmp.Diff(msgs, []*Msg{}); dif != "" {
+		if dif := cmp.Diff(msgs, []*model.Msg{}); dif != "" {
 			t.Errorf("GetMessages comparison failed after deleting: %s", dif)
 		}
 	})
@@ -126,7 +128,7 @@ func TestMailboxCrud(t *testing.T) {
 		if e != nil {
 			t.Error(e)
 		}
-		if diff := cmp.Diff(mbxes, []*Mbx{mbx}); diff != "" {
+		if diff := cmp.Diff(mbxes, []*model.Mbx{mbx}); diff != "" {
 			t.Errorf("Difference after fetching mailboxes with GetMailboxes %s", diff)
 		}
 
@@ -169,7 +171,7 @@ func TestMailboxCrud(t *testing.T) {
 		if e != nil {
 			t.Error(e)
 		}
-		if diff := cmp.Diff(mbxes3, []*Mbx{mbx}); diff != "" {
+		if diff := cmp.Diff(mbxes3, []*model.Mbx{mbx}); diff != "" {
 			t.Errorf("Difference looking for non-subscribed mailboxes with GetMailboxes %s", diff)
 		}
 
@@ -228,7 +230,7 @@ func TestQueueCrud(t *testing.T) {
 		if e != nil {
 			t.Error(e)
 		}
-		if diff := cmp.Diff(msgs, []*QueuedMsg{msg}); diff != "" {
+		if diff := cmp.Diff(msgs, []*model.QueuedMsg{msg}); diff != "" {
 			t.Errorf("Difference in queued messages after retrieval %s", diff)
 		}
 
@@ -240,7 +242,7 @@ func TestQueueCrud(t *testing.T) {
 
 		msgs, e = d.GetQueue()
 		msg.Retries = 1
-		if diff := cmp.Diff(msgs, []*QueuedMsg{msg}); diff != "" {
+		if diff := cmp.Diff(msgs, []*model.QueuedMsg{msg}); diff != "" {
 			t.Errorf("Difference in queued messages after updating retries %s", diff)
 		}
 

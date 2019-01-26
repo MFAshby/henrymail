@@ -20,14 +20,14 @@ func (c UserClaims) Valid() error {
 }
 
 func (wa *wa) login(w http.ResponseWriter, r *http.Request) {
-	email := r.FormValue("email")
+	username := r.FormValue("username")
 	password := r.FormValue("password")
-	if email == "" {
+	if username == "" {
 		wa.loginView.Render(w, nil)
 		return
 	}
 
-	usr, err := wa.lg.Login(email, password)
+	usr, err := wa.lg.Login(username, password)
 	if err != nil {
 		wa.loginView.Render(w, err)
 		return
@@ -47,7 +47,7 @@ func (wa *wa) login(w http.ResponseWriter, r *http.Request) {
 		Value:    tokenString,
 		HttpOnly: true,
 		Secure:   config.GetBool(config.WebAdminUseTls),
-		Domain:   config.GetString(config.ServerName) + config.GetString(config.WebAdminAddress),
+		Domain:   config.GetString(config.ServerName),
 		Expires:  time.Now().Add(time.Hour * 240),
 	})
 	http.Redirect(w, r, "/", http.StatusFound)
@@ -60,7 +60,7 @@ func (wa *wa) logout(w http.ResponseWriter, r *http.Request) {
 		Expires:  time.Now(),
 		HttpOnly: true,
 		Secure:   config.GetBool(config.WebAdminUseTls),
-		Domain:   config.GetString(config.ServerName) + config.GetString(config.WebAdminAddress),
+		Domain:   config.GetString(config.ServerName),
 	})
 	wa.loginView.Render(w, nil)
 	w.WriteHeader(200)

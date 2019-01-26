@@ -38,7 +38,7 @@ type ius struct {
 }
 
 func (u *ius) Username() string {
-	return u.user.Email
+	return u.user.Username
 }
 
 func (u *ius) ListMailboxes(subscribed bool) ([]backend.Mailbox, error) {

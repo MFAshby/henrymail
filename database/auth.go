@@ -24,8 +24,8 @@ func NewLogin(db Database) Login {
 	return &dbLogin{db: db}
 }
 
-func (db dbLogin) Login(email, password string) (*model.Usr, error) {
-	user, passwordBytes, e := db.db.GetUserAndPassword(email)
+func (db dbLogin) Login(username, password string) (*model.Usr, error) {
+	user, passwordBytes, e := db.db.GetUserAndPassword(username)
 	if e != nil {
 		return nil, e
 	}

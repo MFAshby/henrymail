@@ -21,7 +21,7 @@ func (wa *wa) changePassword(w http.ResponseWriter, r *http.Request, u *model.Us
 	if r.Method == http.MethodPost {
 		password := r.FormValue("password")
 		password2 := r.FormValue("password2")
-		err := wa.lg.ChangePassword(u.Email, password, password2)
+		err := wa.lg.ChangePassword(u.Username, password, password2)
 		if err != nil {
 			data.Message = err.Error()
 		} else {

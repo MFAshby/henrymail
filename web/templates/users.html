@@ -4,18 +4,18 @@
     <table>
         <thead>
         <tr>
-            <td>Email</td>
+            <td>Username</td>
             <td></td>
         </tr>
         </thead>
         <tbody>
         {{ range .Users }}
             <tr>
-                <td>{{.Email}}</td>
+                <td>{{.Username}}</td>
                 <td>
                     <form action="deleteUser">
-                        <input type="hidden" name="email" value="{{.Email}}">
-                        {{ if eq .Email $.CurrentUser.Email}}
+                        <input type="hidden" name="username" value="{{.Username}}">
+                        {{ if eq .Username $.CurrentUser.Username}}
                             <input disabled type="submit" value="Delete">
                         {{ else }}
                             <input type="submit" value="Delete" placeholder="You cannot delete yourself">
@@ -28,11 +28,11 @@
     </table>
     <h2>Add a user</h2>
     <form action="addUser">
-        <label>Email
-            <input name="email">
+        <label>Username
+            <input name="username">
         </label>
         <label>Password
-            <input type="password">
+            <input type="password" name="password">
         </label>
         <input type="submit" value="Add">
     </form>
