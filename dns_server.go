@@ -4,8 +4,10 @@ import (
 	"github.com/miekg/dns"
 	"henrymail/config"
 	"henrymail/dkim"
+	"henrymail/spf"
 	"log"
 	"net"
+	"strings"
 )
 
 /**
@@ -35,13 +37,15 @@ func StartFakeDns(addr, proto string) {
 					Mx:         config.GetString(config.ServerName) + ".",
 				})
 			case dns.TypeTXT:
-				dkimRecordString, _ := dkim.GetDkimRecordString()
-				//if e != nil {
-				//	log.Print(e)
-				//}
+				result := ""
+				if strings.Contains(q.Name, "mx._domainkey.") {
+					result, _ = dkim.GetDkimRecordString()
+				} else {
+					result = spf.GetSpfRecordString()
+				}
 				m.Answer = append(m.Answer, &dns.TXT{
 					Hdr: dns.RR_Header{Name: q.Name, Rrtype: q.Qtype, Class: dns.ClassINET, Ttl: 0},
-					Txt: chunk(dkimRecordString, 255),
+					Txt: chunk(result, 255),
 				})
 			}
 		}

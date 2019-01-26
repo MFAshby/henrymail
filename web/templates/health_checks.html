@@ -6,14 +6,26 @@
         </thead>
         <tbody>
             <tr>
-                <td>Dkim</td>
+                <td>DKIM</td>
                 <td>
-                    {{ if eq .TxtRecordShouldBe .TxtRecordIs }}
+                    {{ if eq .DkimRecordShouldBe .DkimRecordIs }}
                         DKIM record is OK
                     {{ else }}
                         DKIM record is wrong<br>
-                        Should be: <code>{{.TxtRecordShouldBe}}</code><br/>
-                        Is:        <code>{{.TxtRecordIs}}</code>
+                        Should be: <code>{{.DkimRecordShouldBe}}</code><br/>
+                        Is:        <code>{{.DkimRecordIs}}</code>
+                    {{ end }}
+                </td>
+            </tr>
+            <tr>
+                <td>SPF</td>
+                <td>
+                    {{ if eq .SpfRecordShouldBe .SpfRecordIs }}
+                        SPF record is OK
+                    {{ else }}
+                        SPF record is wrong<br>
+                        Should be: <code>{{.SpfRecordShouldBe}}</code><br/>
+                        Is:        <code>{{.SpfRecordIs}}</code>
                     {{ end }}
                 </td>
             </tr>

@@ -67,11 +67,14 @@ const (
 	// DKIM
 	DkimSign           = "DkimSign"
 	DkimVerify         = "DkimVerify"
+	DkimMandatory      = "DkimMandatory" // Reject messages that aren't DKIM verified
 	DkimPrivateKeyFile = "DkimPrivateKeyFile"
 	DkimPublicKeyFile  = "DkimPublicKeyFile"
 	DkimKeyBits        = "DkimKeyBits"
 
 	// SPF
+	SpfVerify    = "SpfVerify"
+	SpfMandatory = "SpfMandatory" // Reject messages that aren't SPF verified
 
 	// Web auth tokens
 	JwtTokenSecretFile   = "JwtTokenSecretFile"
