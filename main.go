@@ -19,17 +19,24 @@ func main() {
 	db := database.NewDatabase()
 	login := database.NewLogin(db)
 
-	pk := processors.GetOrCreateDkim()
-	msaChain := processors.NewDkimSigner(pk, processors.NewSender(db))
-	mtaChain := processors.NewDkimVerifier(processors.NewSaver(db))
+	// Setup submission agent processing chain
+	var msaChain processors.MsgProcessor = processors.NewSender(db)
+	if config.GetBool(config.DkimSign) {
+		msaChain = processors.NewDkimSigner(processors.GetOrCreateDkim(), msaChain)
+	}
+
+	// Setup transfer agent processing chain
+	mtaChain := processors.NewSaver(db)
+	if config.GetBool(config.DkimVerify) {
+		msaChain = processors.NewDkimVerifier(msaChain)
+	}
+
+	SeedData(login)
 
 	smtp.StartMsa(msaChain, login, tlsConfig)
 	smtp.StartMta(mtaChain, tlsConfig)
 	imap.StartImap(login, db, tlsConfig)
-	web.StartWebAdmin(login, db, tlsConfig, &pk.PublicKey)
-
-	// Setup admin user, domain keys if this if the first startup
-	SeedData(login)
+	web.StartWebAdmin(login, db, tlsConfig)
 
 	// Wait for exit
 	select {}

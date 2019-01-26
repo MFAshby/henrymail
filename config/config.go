@@ -62,9 +62,13 @@ const (
 	DefaultMailboxes = "DefaultMailboxes"
 
 	// DKIM
+	DkimSign           = "DkimSign"
+	DkimVerify         = "DkimVerify"
 	DkimPrivateKeyFile = "DkimPrivateKeyFile"
 	DkimPublicKeyFile  = "DkimPublicKeyFile"
 	DkimKeyBits        = "DkimKeyBits"
+
+	// SPF
 
 	// Web auth tokens
 	JwtTokenSecretFile = "JwtTokenSecretFile"
@@ -104,6 +108,8 @@ func SetupConfig() {
 	viper.SetDefault(AdminPassword, "") // Empty means it will be generated
 	viper.SetDefault(DefaultMailboxes, []string{"INBOX", "Trash", "Sent", "Drafts"})
 
+	viper.SetDefault(DkimSign, true)
+	viper.SetDefault(DkimVerify, true)
 	viper.SetDefault(DkimPrivateKeyFile, "keys/dkim-private.pem")
 	viper.SetDefault(DkimPublicKeyFile, "keys/dkim-public.pem")
 	viper.SetDefault(DkimKeyBits, 2048)
@@ -135,7 +141,6 @@ func SetupResolver() {
 		},
 	}
 }
-
 func GetString(key string) string {
 	return viper.GetString(key)
 }

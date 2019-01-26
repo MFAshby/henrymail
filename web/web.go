@@ -8,6 +8,7 @@ import (
 	"henrymail/config"
 	"henrymail/database"
 	"henrymail/model"
+	"henrymail/processors"
 	"html/template"
 	"io/ioutil"
 	"log"
@@ -68,7 +69,7 @@ type wa struct {
 	lg        database.Login
 	db        database.Database
 	jwtSecret []byte
-	pk        *rsa.PublicKey
+	dkim      *rsa.PrivateKey
 
 	loginView          *View
 	mailboxView        *View
@@ -114,7 +115,7 @@ func (wa *wa) msgs(name string, u *model.Usr) (*model.Mbx, []*model.Msg, error) 
 	return mbx, msgs, nil
 }
 
-func StartWebAdmin(lg database.Login, db database.Database, tlsC *tls.Config, pk *rsa.PublicKey) {
+func StartWebAdmin(lg database.Login, db database.Database, tlsC *tls.Config) {
 	// Generate or read secret for JWT auth
 	jwtSecret, e := ioutil.ReadFile(config.GetString(config.JwtTokenSecretFile))
 	if os.IsNotExist(e) {
@@ -122,12 +123,12 @@ func StartWebAdmin(lg database.Login, db database.Database, tlsC *tls.Config, pk
 	} else if e != nil {
 		log.Fatal(e)
 	}
-
+	dkim := processors.GetOrCreateDkim()
 	webAdmin := wa{
 		lg:                 lg,
 		db:                 db,
 		jwtSecret:          jwtSecret,
-		pk:                 pk,
+		dkim:               dkim,
 		loginView:          NewView("login.html", "/templates/login.html"),
 		mailboxView:        NewView("index.html", "/templates/mailbox.html"),
 		changePasswordView: NewView("index.html", "/templates/change_password.html"),

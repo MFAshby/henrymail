@@ -13,7 +13,9 @@ require (
 	github.com/gorilla/context v1.1.1 // indirect
 	github.com/gorilla/mux v1.6.2
 	github.com/mattn/go-sqlite3 v1.10.0
+	github.com/miekg/dns v1.1.3 // indirect
 	github.com/robfig/cron v0.0.0-20180505203441-b41be1df6967
 	github.com/spf13/viper v1.3.1
 	golang.org/x/crypto v0.0.0-20190103213133-ff983b9c42bc
+	golang.org/x/net v0.0.0-20190125091013-d26f9f9a57f3 // indirect
 )

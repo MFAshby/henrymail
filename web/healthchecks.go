@@ -21,7 +21,7 @@ func (wa *wa) healthChecks(w http.ResponseWriter, r *http.Request, u *model.Usr)
 	if len(txtRecords) > 0 {
 		actual = txtRecords[0]
 	}
-	pkb, _ := x509.MarshalPKIXPublicKey(wa.pk)
+	pkb, _ := x509.MarshalPKIXPublicKey(wa.dkim.PublicKey)
 	buf := new(bytes.Buffer)
 	_, _ = base64.NewEncoder(base64.StdEncoding, buf).Write(pkb)
 	expected := "v=dkim1; k=rsa; p=" + buf.String()
