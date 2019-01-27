@@ -22,4 +22,4 @@ I would love to hear your feedback. Please raise any
 issues [in the project repository](https://gogs.mfashby.net/martin/henrymail/issues)
 , or [send me an email](martin@ashbysoft.com)
 
-[Installation and usage](setup.md)
+[Installation and usage](doc/SETUP.md)
