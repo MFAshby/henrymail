@@ -100,7 +100,7 @@ func SetupConfig() {
 	viper.SetDefault(ImapUseTls, true)
 	viper.SetDefault(WebAdminUseTls, true)
 
-	viper.SetDefault(CertificateMode, AutoCert)
+	viper.SetDefault(CertificateMode, string(AutoCert))
 	viper.SetDefault(AutoCertEmail, "admin@example.com")
 	viper.SetDefault(AutoCertCacheDir, "keys")
 	viper.SetDefault(CertificateFile, "/etc/letsencrypt/live/example.com/fullchain.pem")
