@@ -32,7 +32,6 @@ func main() {
 		mtaChain = processors.NewDkimVerifier(mtaChain)
 	}
 
-	// TODO
 	// SPF checker
 	// Virus scanner
 	// Spam filter

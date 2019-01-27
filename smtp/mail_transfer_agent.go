@@ -57,7 +57,6 @@ type tus struct {
 	proc processors.MsgProcessor
 }
 
-// TODO fix code duplication here
 func (u *tus) Send(from string, to []string, r io.Reader) error {
 	content, e := ioutil.ReadAll(r)
 	// Check we can read all the content

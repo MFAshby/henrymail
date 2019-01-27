@@ -56,7 +56,6 @@ func (db dbLogin) NewUser(email, password string, admin bool) (*model.Usr, error
 }
 
 func (db dbLogin) ChangePassword(email, password, password2 string) error {
-	// TODO password policy
 	if password == "" {
 		return errors.New("You must enter a password")
 	}
