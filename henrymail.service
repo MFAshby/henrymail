@@ -1,0 +1,12 @@
+[Unit]
+Description=henrymail
+After=network.target
+
+[Service]
+User=henrymail
+WorkingDirectory=/var/lib/henrymail
+ExecStart=/usr/bin/henrymail
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
