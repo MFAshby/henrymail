@@ -153,8 +153,26 @@ systemctl start henrymail
 Refresh the administration page again to check everything is working OK. 
 You can now close the terminal!
 
+We've almost got a working email server. Go back to Namecheap, and add 
+a Custom MX record with host set to `@`, and value set to your mail server's name (with a trailing dot!):
+![namecheap add mx record screenshot](img/namecheap_add_mx.png)
+
+Finally, you can connect your email client. Here I am using [Thunderbird](https://www.thunderbird.net)
+
+Add a new account, and enter the details as follows:
+* Incoming server should be IMAP, with your mail server name e.g. `mail.mfashby.net`
+* Outgoing server should be SMTP, with your mail server name e.g. `mail.mfashby.net`
+* Press 're-test', and thunderbird should automatically pick up the 
+port numbers and SSL settings.
+![thunderbird new account sample](img/thunderbird_account_config.png)  
+
+Press Done, and enter the admin password when prompted
+
+You're done! Test your new configuration by sending an email to another
+address that you own (or a friend)
+
 TODO
 ====
-* Administration page guide to adding users
-* Configuring mail client.
+* Administration page guide to adding users.
 * Adding SPF and DKIM records.
+* Ongoing administration (quotas, spam settings)
