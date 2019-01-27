@@ -54,7 +54,7 @@ func main() {
 func SeedData(login database.Login) {
 	var pw string
 	if config.GetString(config.AdminPassword) == "" {
-		pw = randSeq(16)
+		pw = randSeq(8)
 	} else {
 		pw = config.GetString(config.AdminPassword)
 	}
