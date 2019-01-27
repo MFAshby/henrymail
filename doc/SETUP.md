@@ -86,13 +86,6 @@ chmod +x /usr/bin/henrymail
 setcap 'cap_net_bind_service=+ep' /usr/bin/henrymail
 ```
 
-These commands download the program and tell the operating system it's OK
-to execute it.
-```bash
-wget -O /usr/bin/henrymail https://gogs.mfashby.net/martin/henrymail/raw/master/henrymail
-chmod +x /usr/bin/henrymail
-```
-
 These commands create a new user to execute the program, and grant the 
 user access to the files and folders it needs (it's a good idea
 to do this, service software shouldn't usually be running as an 
