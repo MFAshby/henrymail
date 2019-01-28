@@ -164,8 +164,32 @@ Press Done, and enter the admin password when prompted
 You're done! Test your new configuration by sending an email to another
 address that you own (or a friend)
 
+Keep reading for further improvements to your server
+
+SPF and DKIM records
+====================
+It's advisable to have Sender Policy Framework and DomainKeys Identified Mail 
+records set up for your server. These help other servers to validate emails 
+from your server, so your emails are less likely to be rejected. See 
+[this article](https://blog.woodpecker.co/cold-email/spf-dkim/) for an explanation.
+
+To set these up, log into the administration page, then click 'Health Checks'.
+![henrymail health checks page](img/henrymail_healthchecks.png)
+
+These text boxes show the entries you need to add to your DNS system in order 
+for emails to be verified by other servers. Log into Namecheap and add the 
+corresponding entries as TXT records:
+
+![namecheap adding SPF and DKIM records](img/namecheap_spf_dkim.png)
+
+Save these entries, and allow a couple of minutes for them to propagate through
+the DNS system. Reload the 'Health Checks' page, it should now display a message
+saying that your SPF and DKIM records are OK
+
+![henrymail health checks OK](img/henrymail_healthchecks_ok.png)
+
+
 TODO
 ====
 * Administration page guide to adding users.
-* Adding SPF and DKIM records.
 * Ongoing administration (quotas, spam settings)
