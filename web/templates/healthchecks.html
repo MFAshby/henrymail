@@ -1,35 +1,40 @@
 {{ define "content" }}
 <div>
-    <table>
-        <thead>
-            <tr><td colspan="2">Health checks</td></tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>DKIM</td>
-                <td>
-                    {{ if eq .DkimRecordShouldBe .DkimRecordIs }}
-                        DKIM record is OK
-                    {{ else }}
-                        DKIM record is wrong<br>
-                        Should be: <code>{{.DkimRecordShouldBe}}</code><br/>
-                        Is:        <code>{{.DkimRecordIs}}</code>
-                    {{ end }}
-                </td>
-            </tr>
-            <tr>
-                <td>SPF</td>
-                <td>
-                    {{ if eq .SpfRecordShouldBe .SpfRecordIs }}
-                        SPF record is OK
-                    {{ else }}
-                        SPF record is wrong<br>
-                        Should be: <code>{{.SpfRecordShouldBe}}</code><br/>
-                        Is:        <code>{{.SpfRecordIs}}</code>
-                    {{ end }}
-                </td>
-            </tr>
-        </tbody>
-    </table>
+    <h1>Health Checks</h1>
+    <h4>DKIM</h4>
+    <p>
+        {{ if eq .DkimRecordShouldBe .DkimRecordIs }}
+        Your DKIM record is OK &#x2714;
+        {{ else }}
+        Your DKIM record is wrong &#x2717;<br/>
+        It should be:
+        <div>
+            <label>Host
+                <input readonly type="text" value="mx._domainkey"/>
+            </label>
+            <label>Value
+                <input class="copyable" readonly type="text" value="{{.DkimRecordShouldBe}}"/>
+            </label>
+        </div>
+        {{ end }}
+    </p>
+
+    <h4>SPF</h4>
+    <p>
+        {{ if eq .SpfRecordShouldBe .SpfRecordIs }}
+        Your SPF record is OK &#x2714;
+        {{ else }}
+        Your SPF record is wrong &#x2717;<br/>
+        It should be;
+        <div>
+            <label>Host
+                <input class="copyable" readonly type="text" value="@"/>
+            </label>
+            <label>Value
+                <input class="copyable" readonly type="text" value="{{.SpfRecordShouldBe}}"/>
+            </label>
+        </div>
+        {{ end }}
+    </p>
 </div>
 {{ end }}
