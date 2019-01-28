@@ -129,7 +129,7 @@ func StartWebAdmin(lg database.Login, db database.Database, tlsC *tls.Config) {
 		changePasswordView: NewView("index.html", "/templates/change_password.html"),
 		messageView:        NewView("index.html", "/templates/message.html"),
 		usersView:          NewView("index.html", "/templates/users.html"),
-		healthChecksView:   NewView("index.html", "/templates/health_checks.html"),
+		healthChecksView:   NewView("index.html", "/templates/healthchecks.html"),
 		securityView:       NewView("index.html", "/templates/security.html"),
 		errorView:          NewView("error.html", "/templates/error.html"),
 	}

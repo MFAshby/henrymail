@@ -17,31 +17,15 @@ func (wa *wa) healthChecks(w http.ResponseWriter, r *http.Request, u *model.Usr)
 		return
 	}
 
-	spfRecords, e := net.LookupTXT(config.GetString(config.Domain))
-	if e != nil {
-		wa.renderError(w, e)
-		return
-	}
-	spfActual := ""
-	for _, s := range spfRecords {
-		if strings.Contains(s, "v=spf1") {
-			spfActual = s
-		}
-	}
 	spfExpected := spf.GetSpfRecordString()
+	spfActual := fetchSpfActual()
 
-	dkimRecords, e := net.LookupTXT("mx._domainkey." + config.GetString(config.Domain))
-	if e != nil {
-		wa.renderError(w, e)
-		return
-	}
-	// Longer TXT records may be split
-	dkimActual := strings.Join(dkimRecords, "")
 	dkimExpected, e := dkim.GetDkimRecordString()
 	if e != nil {
 		wa.renderError(w, e)
 		return
 	}
+	dkimActual := fetchDkimActual()
 
 	data := struct {
 		LayoutData
@@ -57,4 +41,31 @@ func (wa *wa) healthChecks(w http.ResponseWriter, r *http.Request, u *model.Usr)
 		SpfRecordShouldBe:  spfExpected,
 	}
 	wa.healthChecksView.Render(w, data)
+}
+
+func fetchDkimActual() string {
+	dkimActual := ""
+	dkimRecords, e := net.LookupTXT("mx._domainkey." + config.GetString(config.Domain))
+	if e != nil {
+		dkimActual = e.Error()
+	} else {
+		// Longer TXT records may be split
+		dkimActual = strings.Join(dkimRecords, "")
+	}
+	return dkimActual
+}
+
+func fetchSpfActual() string {
+	spfActual := ""
+	spfRecords, e := net.LookupTXT(config.GetString(config.Domain))
+	if e != nil {
+		spfActual = e.Error()
+	} else {
+		for _, s := range spfRecords {
+			if strings.Contains(s, "v=spf1") {
+				spfActual = s
+			}
+		}
+	}
+	return spfActual
 }
