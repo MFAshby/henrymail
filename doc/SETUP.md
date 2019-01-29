@@ -189,6 +189,14 @@ saying that your SPF and DKIM records are OK
 ![henrymail health checks OK](img/henrymail_healthchecks_ok.png)
 
 
+Advanced Configuration
+======================
+Henrymail is compatible with some more advanced setups, e.g. if you are running a 
+web server on the same server.
+
+The complete list of configuration options is documented in 
+[henrymail.full.prop](../henrymail.full.prop)
+
 TODO
 ====
 * Administration page guide to adding users.

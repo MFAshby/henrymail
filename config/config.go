@@ -73,8 +73,8 @@ const (
 	DkimKeyBits        = "DkimKeyBits"
 
 	// SPF
-	SpfVerify    = "SpfVerify"
-	SpfMandatory = "SpfMandatory" // Reject messages that aren't SPF verified
+	//SpfVerify    = "SpfVerify"
+	//SpfMandatory = "SpfMandatory" // Reject messages that aren't SPF verified
 
 	// Web auth tokens
 	JwtTokenSecretFile   = "JwtTokenSecretFile"
