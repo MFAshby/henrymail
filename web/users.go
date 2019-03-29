@@ -43,11 +43,11 @@ func (wa *wa) users(w http.ResponseWriter, r *http.Request, u *model.Usr) {
 		return
 	}
 	data := struct {
-		LayoutData
+		layoutData
 		Users []*model.Usr
 	}{
 		*ld,
 		usrs,
 	}
-	wa.usersView.Render(w, data)
+	wa.usersView.render(w, data)
 }

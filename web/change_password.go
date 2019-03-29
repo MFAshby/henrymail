@@ -6,16 +6,16 @@ import (
 )
 
 func (wa *wa) changePassword(w http.ResponseWriter, r *http.Request, u *model.Usr) {
-	layoutData, e := wa.layoutData(u)
+	ld, e := wa.layoutData(u)
 	if e != nil {
 		wa.renderError(w, e)
 		return
 	}
 	data := struct {
-		LayoutData
+		layoutData
 		Message string
 	}{
-		*layoutData,
+		*ld,
 		"",
 	}
 	if r.Method == http.MethodPost {
@@ -28,5 +28,5 @@ func (wa *wa) changePassword(w http.ResponseWriter, r *http.Request, u *model.Us
 			data.Message = "Password successfully changed"
 		}
 	}
-	wa.changePasswordView.Render(w, data)
+	wa.changePasswordView.render(w, data)
 }

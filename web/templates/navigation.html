@@ -1,9 +1,5 @@
-<nav class="pure-menu-horizontal">
+<nav>
     <ul class="pure-menu-list">
-        {{/*Not doing webmail yet*/}}
-        {{/*{{ range .Mailboxes }}*/}}
-            {{/*<li><a class="pure-menu-link"  href="/mailbox/{{.Name}}">{{.Name}}</a></li>*/}}
-        {{/*{{ end }}*/}}
         {{ if .CurrentUser.Admin }}
         <li class="pure-menu-item"><a class="pure-menu-link" href="/admin/users">users</a></li>
         <li class="pure-menu-item"><a class="pure-menu-link" href="/admin/healthChecks">health checks</a></li>
@@ -12,4 +8,27 @@
         <li class="pure-menu-item"><a class="pure-menu-link" href="/changePassword">change password</a></li>
         <li class="pure-menu-item"><a class="pure-menu-link" href="/logout">logout</a></li>
     </ul>
+    <script>
+        // Highlight the correct navigation link
+        document.querySelectorAll(".pure-menu-link").forEach(elem => {
+            if (window.location.href === elem.href) {
+                elem.parentElement.classList.add("pure-menu-active");
+            } else {
+                elem.parentElement.classList.remove("pure-menu-active");
+            }
+        });
+
+        // Switch to vertical menu on small screens
+        let lst = document.querySelector(".pure-menu-list").parentElement;
+        const mql = window.matchMedia("(min-width: 600px)");
+        function updateNavOrientation() {
+            if (mql.matches) {
+                lst.classList.add("pure-menu-horizontal");
+            } else {
+                lst.classList.remove("pure-menu-horizontal");
+            }
+        }
+        updateNavOrientation();
+        mql.addListener(updateNavOrientation);
+    </script>
 </nav>

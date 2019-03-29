@@ -161,7 +161,7 @@ func (s *sender) sendFailureNotification(originalMsgTo, originalMsgFrom string, 
 		return e
 	}
 
-	// Render the error message template
+	// render the error message template
 	buf := new(bytes.Buffer)
 	e = template.Must(template.ParseFiles("templates/failure_notification.content")).
 		ExecuteTemplate(buf, "failure_notification.content", struct {

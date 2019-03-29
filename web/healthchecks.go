@@ -28,19 +28,19 @@ func (wa *wa) healthChecks(w http.ResponseWriter, r *http.Request, u *model.Usr)
 	dkimActual := fetchDkimActual()
 
 	data := struct {
-		LayoutData
+		layoutData
 		DkimRecordIs       string
 		DkimRecordShouldBe string
 		SpfRecordIs        string
 		SpfRecordShouldBe  string
 	}{
-		LayoutData:         *ld,
+		layoutData:         *ld,
 		DkimRecordIs:       dkimActual,
 		DkimRecordShouldBe: dkimExpected,
 		SpfRecordIs:        spfActual,
 		SpfRecordShouldBe:  spfExpected,
 	}
-	wa.healthChecksView.Render(w, data)
+	wa.healthChecksView.render(w, data)
 }
 
 func fetchDkimActual() string {

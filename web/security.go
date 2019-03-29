@@ -11,10 +11,10 @@ func (wa *wa) security(w http.ResponseWriter, r *http.Request, u *model.Usr) {
 		wa.renderError(w, e)
 		return
 	}
-	wa.securityView.Render(w, struct {
-		LayoutData
+	wa.securityView.render(w, struct {
+		layoutData
 	}{
-		LayoutData: *data,
+		layoutData: *data,
 	})
 }
 

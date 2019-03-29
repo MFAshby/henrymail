@@ -1,14 +1,20 @@
 package web
 
 import (
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"henrymail/config"
 	"henrymail/model"
+	"io/ioutil"
+	"log"
 	"net/http"
+	"os"
 	"time"
 )
+
+type AuthenticatedHandler = func(w http.ResponseWriter, r *http.Request, u *model.Usr)
 
 type UserClaims struct {
 	jwt.StandardClaims
@@ -19,17 +25,40 @@ func (c UserClaims) Valid() error {
 	return c.StandardClaims.Valid()
 }
 
+func loadJwtSecret() []byte {
+	jwtSecret, e := ioutil.ReadFile(config.GetString(config.JwtTokenSecretFile))
+	if os.IsNotExist(e) {
+		jwtSecret = generateAndSaveJwtSecret()
+	} else if e != nil {
+		log.Fatal(e)
+	}
+	return jwtSecret
+}
+
+func generateAndSaveJwtSecret() []byte {
+	jwtSecret := make([]byte, 64)
+	_, e := rand.Read(jwtSecret)
+	if e != nil {
+		log.Fatal(e)
+	}
+	e = ioutil.WriteFile(config.GetString(config.JwtTokenSecretFile), jwtSecret, 0700)
+	if e != nil {
+		log.Fatal(e)
+	}
+	return jwtSecret
+}
+
 func (wa *wa) login(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("username")
 	password := r.FormValue("password")
 	if username == "" {
-		wa.loginView.Render(w, nil)
+		wa.loginView.render(w, nil)
 		return
 	}
 
 	usr, err := wa.lg.Login(username, password)
 	if err != nil {
-		wa.loginView.Render(w, err)
+		wa.loginView.render(w, err)
 		return
 	}
 
@@ -39,7 +68,7 @@ func (wa *wa) login(w http.ResponseWriter, r *http.Request) {
 	})
 	tokenString, err := token.SignedString(wa.jwtSecret)
 	if err != nil {
-		wa.loginView.Render(w, err)
+		wa.loginView.render(w, err)
 		return
 	}
 	http.SetCookie(w, &http.Cookie{
@@ -62,8 +91,7 @@ func (wa *wa) logout(w http.ResponseWriter, r *http.Request) {
 		Secure:   config.GetBool(config.WebAdminUseTls),
 		Domain:   config.GetCookieDomain(),
 	})
-	wa.loginView.Render(w, nil)
-	w.WriteHeader(200)
+	wa.loginView.render(w, nil)
 }
 
 func (wa *wa) checkAdmin(next AuthenticatedHandler) http.Handler {
