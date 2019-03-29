@@ -1,9 +1,8 @@
 {{ define "content" }}
 <div>
-    <h2>rotate JWT secret</h2>
-    <p>This will log everybody out of the web interface, including you, and force them to re-authenticate</p>
-    <form class="pure-form" action="rotateJwt">
-        <button class="pure-button pure-button-primary" type="submit">Rotate JWT secret</button>
+    <form class="pure-form pure-form-stacked" action="rotateJwt">
+        <label for="rotate-jwt-button">This will log everybody out of the web interface, including you, and force them to re-authenticate</label>
+        <button id="rotate-jwt-button" class="pure-button pure-button-primary" type="submit">Rotate JWT secret</button>
     </form>
 </div>
 {{ end }}
