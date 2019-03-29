@@ -1,6 +1,6 @@
 {{ define "content" }}
 <div>
-    <h2>Current users</h2>
+    <h2>users</h2>
     <table class="pure-table pure-table-bordered pure-table-striped">
         <thead>
         <tr>
@@ -26,21 +26,24 @@
         {{ end }}
         </tbody>
     </table>
-    <h2>Add a user</h2>
     <form class="pure-form pure-form-aligned" action="addUser">
-        <div class="pure-control-group">
-        <label for="new-user-username">Username</label>
-        <input id="new-user-username" name="username">
-        </div>
+        <fieldset>
+            <legend>add user</legend>
 
-        <div class="pure-control-group">
-        <label for="new-user-password">Password</label>
-        <input id="new-user-password" type="password" name="password">
-        </div>
+            <div class="pure-control-group">
+            <label for="new-user-username">Username</label>
+            <input id="new-user-username" name="username">
+            </div>
 
-        <div class="pure-controls">
-            <button class="pure-button pure-button-primary" type="submit">Add</button>
-        </div>
+            <div class="pure-control-group">
+            <label for="new-user-password">Password</label>
+            <input id="new-user-password" type="password" name="password">
+            </div>
+
+            <div class="pure-controls">
+                <button class="pure-button pure-button-primary" type="submit">Add</button>
+            </div>
+        </fieldset>
     </form>
 </div>
 {{ end }}

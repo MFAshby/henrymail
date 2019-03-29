@@ -1,23 +1,28 @@
 <!doctype HTML>
 <html>
     <head>
-        <title>Henrymail administration interface</title>
-        <link rel="stylesheet" href="assets/styles.css">
+        <title>henrymail</title>
+        <link rel="stylesheet" href="/assets/styles.css">
+        <link rel="stylesheet" href="/assets/pure/pure-min.css">
         <meta name="viewport" content="width=device-width">
     </head>
     <body>
-        <h2>Please log in</h2>
-        <form action="/login" method="post">
-            <label>
-                Email
-                <input type="text" name="username">
-            </label>
-            <label>
-                Password
-                <input type="password" name="password">
-            </label>
-            <input type="submit" value="Log in">
-            <p>{{ .Error }}</p>
+        <header><h1>henrymail</h1></header>
+        <form action="/login" method="post" class="pure-form pure-form-aligned">
+            <div class="pure-control-group">
+            <label for="username">username</label>
+            <input class="custom-input" id="username" type="text" name="username">
+            </div>
+
+            <div class="pure-control-group">
+            <label for="password">password</label>
+            <input class="custom-input" id="password" type="password" name="password">
+            </div>
+
+            <div class="pure-controls">
+            <button class="pure-button pure-button-primary" type="submit">Log in</button>
+            <span class="pure-form-message">{{ .Error }}</span>
+            </div>
         </form>
     </body>
 </html>

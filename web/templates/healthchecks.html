@@ -1,6 +1,6 @@
 {{ define "content" }}
 <div>
-    <h1>Health Checks</h1>
+    <h1>health checks</h1>
     <h4>DKIM</h4>
     <p>
         {{ if eq .DkimRecordShouldBe .DkimRecordIs }}
@@ -8,32 +8,36 @@
         {{ else }}
         Your DKIM record is wrong &#x2717;<br/>
         It should be:
-        <div>
-            <label>Host
-                <input readonly type="text" value="mx._domainkey"/>
-            </label>
-            <label>Value
-                <input class="copyable" readonly type="text" value="{{.DkimRecordShouldBe}}"/>
-            </label>
-        </div>
+        <form class="pure-form pure-form-aligned">
+            <div class="pure-control-group">
+                <label for="dkim-host">Host</label>
+                <input id="dkim-host" readonly type="text" value="mx._domainkey"/>
+            </div>
+            <div class="pure-control-group">
+                <label for="dkim-value">Value</label>
+                <input id="dkim-value" readonly type="text" value="{{.DkimRecordShouldBe}}"/>
+            </div>
+        </form>
         {{ end }}
     </p>
-
     <h4>SPF</h4>
     <p>
         {{ if eq .SpfRecordShouldBe .SpfRecordIs }}
         Your SPF record is OK &#x2714;
         {{ else }}
         Your SPF record is wrong &#x2717;<br/>
-        It should be;
-        <div>
-            <label>Host
-                <input class="copyable" readonly type="text" value="@"/>
-            </label>
-            <label>Value
-                <input class="copyable" readonly type="text" value="{{.SpfRecordShouldBe}}"/>
-            </label>
-        </div>
+        It should be:
+        <form class="pure-form pure-form-aligned">
+            <div class="pure-control-group">
+            <label for="spf-host">Host</label>
+            <input id="spf-host" class="copyable" readonly type="text" value="@"/>
+            </div>
+
+            <div class="pure-control-group">
+            <label for="spf-value">Value</label>
+            <input id="spf-value" class="copyable" readonly type="text" value="{{.SpfRecordShouldBe}}"/>
+            </div>
+        </form>
         {{ end }}
     </p>
 </div>

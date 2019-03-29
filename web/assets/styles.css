@@ -9,3 +9,7 @@
     --col5: #ab9df2;
     --col6: #78dce8;
 }
+
+body {
+    padding: 1em;
+}
