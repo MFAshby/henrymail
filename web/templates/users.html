@@ -1,11 +1,11 @@
 {{ define "content" }}
 <div>
     <h2>Current users</h2>
-    <table>
+    <table class="pure-table pure-table-bordered pure-table-striped">
         <thead>
         <tr>
             <td>Username</td>
-            <td></td>
+            <td>Actions</td>
         </tr>
         </thead>
         <tbody>
@@ -13,12 +13,12 @@
             <tr>
                 <td>{{.Username}}</td>
                 <td>
-                    <form action="deleteUser">
+                    <form class="pure-form" action="deleteUser">
                         <input type="hidden" name="username" value="{{.Username}}">
                         {{ if eq .Username $.CurrentUser.Username}}
-                            <input disabled type="submit" value="Delete">
+                            <span class="pure-form-message">You cannot delete yourself</span>
                         {{ else }}
-                            <input type="submit" value="Delete" placeholder="You cannot delete yourself">
+                            <button class="pure-button" type="submit">Delete</button>
                         {{ end }}
                     </form>
                 </td>
@@ -27,14 +27,20 @@
         </tbody>
     </table>
     <h2>Add a user</h2>
-    <form action="addUser">
-        <label>Username
-            <input name="username">
-        </label>
-        <label>Password
-            <input type="password" name="password">
-        </label>
-        <input type="submit" value="Add">
+    <form class="pure-form pure-form-aligned" action="addUser">
+        <div class="pure-control-group">
+        <label for="new-user-username">Username</label>
+        <input id="new-user-username" name="username">
+        </div>
+
+        <div class="pure-control-group">
+        <label for="new-user-password">Password</label>
+        <input id="new-user-password" type="password" name="password">
+        </div>
+
+        <div class="pure-controls">
+            <button class="pure-button pure-button-primary" type="submit">Add</button>
+        </div>
     </form>
 </div>
 {{ end }}
