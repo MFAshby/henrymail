@@ -1,15 +1,15 @@
-<nav>
-    <ul>
+<nav class="pure-menu-horizontal">
+    <ul class="pure-menu-list">
         {{/*Not doing webmail yet*/}}
         {{/*{{ range .Mailboxes }}*/}}
-            {{/*<li><a href="/mailbox/{{.Name}}">{{.Name}}</a></li>*/}}
+            {{/*<li><a class="pure-menu-link"  href="/mailbox/{{.Name}}">{{.Name}}</a></li>*/}}
         {{/*{{ end }}*/}}
         {{ if .CurrentUser.Admin }}
-        <li><a href="/admin/users">Users</a></li>
-        <li><a href="/admin/healthChecks">Health Checks</a></li>
-        <li><a href="/admin/security">Security</a></li>
+        <li class="pure-menu-item"><a class="pure-menu-link" href="/admin/users">Users</a></li>
+        <li class="pure-menu-item"><a class="pure-menu-link" href="/admin/healthChecks">Health Checks</a></li>
+        <li class="pure-menu-item"><a class="pure-menu-link" href="/admin/security">Security</a></li>
         {{ end }}
-        <li><a href="/changePassword">Change Password</a></li>
-        <li><a href="/logout">Logout</a></li>
+        <li class="pure-menu-item"><a class="pure-menu-link" href="/changePassword">Change Password</a></li>
+        <li class="pure-menu-item"><a class="pure-menu-link" href="/logout">Logout</a></li>
     </ul>
 </nav>
