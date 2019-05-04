@@ -2,52 +2,61 @@ package web
 
 import (
 	"errors"
-	"henrymail/model"
+	"henrymail/logic"
+	"henrymail/models"
 	"net/http"
 )
 
-func (wa *wa) delete(w http.ResponseWriter, r *http.Request, u *model.Usr) {
+func (wa *wa) delete(w http.ResponseWriter, r *http.Request, u *models.User) {
 	username := r.FormValue("username")
 	if username == u.Username {
 		wa.renderError(w, errors.New("You cannot delete yourself"))
 		return
 	}
-	err := wa.db.DeleteUser(username)
+	user, err := models.UserByUsername(wa.db, username)
 	if err != nil {
 		wa.renderError(w, err)
-	} else {
-		http.Redirect(w, r, "users", http.StatusFound)
+		return
 	}
+	err = user.Delete(wa.db)
+	if err != nil {
+		wa.renderError(w, err)
+		return
+	}
+
+	http.Redirect(w, r, "users", http.StatusFound)
 }
 
-func (wa *wa) add(w http.ResponseWriter, r *http.Request, u *model.Usr) {
+func (wa *wa) add(w http.ResponseWriter, r *http.Request, u *models.User) {
 	username := r.FormValue("username")
 	password := r.FormValue("password")
-	_, err := wa.lg.NewUser(username, password, false)
+	isadmin := r.FormValue("admin") == "admin"
+	_, err := logic.NewUser(wa.db, username, password, isadmin)
 	if err != nil {
 		wa.renderError(w, err)
-	} else {
-		http.Redirect(w, r, "users", http.StatusFound)
+		return
 	}
+
+	http.Redirect(w, r, "users", http.StatusFound)
 }
 
-func (wa *wa) users(w http.ResponseWriter, r *http.Request, u *model.Usr) {
+func (wa *wa) users(w http.ResponseWriter, r *http.Request, u *models.User) {
 	ld, e := wa.layoutData(u)
 	if e != nil {
 		wa.renderError(w, e)
 		return
 	}
-	usrs, e := wa.db.GetUsers()
+	users, e := models.GetAllUser(wa.db)
 	if e != nil {
 		wa.renderError(w, e)
 		return
 	}
 	data := struct {
 		layoutData
-		Users []*model.Usr
+		Users []*models.User
 	}{
 		*ld,
-		usrs,
+		users,
 	}
 	wa.usersView.render(w, data)
 }

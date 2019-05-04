@@ -1,21 +1,27 @@
-package processors
+package process
 
 import (
 	"bytes"
 	"github.com/emersion/go-dkim"
-	"henrymail/model"
+	"github.com/pkg/errors"
+	"henrymail/config"
 )
 
 type dkimVerifier struct {
 	next MsgProcessor
 }
 
-func (d dkimVerifier) Process(msg *model.ReceivedMsg) error {
+func (d dkimVerifier) Process(msg *ReceivedMsg) error {
 	v, e := dkim.Verify(bytes.NewReader(msg.Content))
 	if e != nil {
 		return e
 	}
 	msg.Verifications = v
+
+	if config.GetBool(config.DkimMandatory) && len(msg.Verifications) == 0 {
+		return errors.New("dkim verification failed")
+	}
+
 	return d.next.Process(msg)
 }
 

@@ -1,13 +1,11 @@
-package processors
-
-import "henrymail/model"
+package process
 
 /**
  * A black hole to throw unwanted messages into
  */
 type hole struct{}
 
-func (hole) Process(w *model.ReceivedMsg) error {
+func (hole) Process(w *ReceivedMsg) error {
 	return nil
 }
 

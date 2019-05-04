@@ -1,11 +1,13 @@
 package main
 
 import (
+	"database/sql"
 	"henrymail/config"
 	"henrymail/database"
 	"henrymail/dkim"
 	"henrymail/imap"
-	"henrymail/processors"
+	"henrymail/logic"
+	"henrymail/process"
 	"henrymail/smtp"
 	"henrymail/web"
 	"log"
@@ -17,31 +19,29 @@ func main() {
 	config.SetupResolver()
 
 	tlsConfig := config.GetTLSConfig()
-	db := database.NewDatabase()
-	login := database.NewLogin(db)
+	db := database.OpenDatabase()
 
 	// submission agent processing chain
-	var msaChain processors.MsgProcessor = processors.NewSender(db)
+	var msaChain process.MsgProcessor = process.NewSender(db)
 	if config.GetBool(config.DkimSign) {
-		msaChain = processors.NewDkimSigner(dkim.GetOrCreateDkim(), msaChain)
+		msaChain = process.NewDkimSigner(dkim.GetOrCreateDkim(), msaChain)
 	}
 
 	// transfer agent processing chain
-	mtaChain := processors.NewSaver(db)
+	mtaChain := process.NewSaver(db)
 	if config.GetBool(config.DkimVerify) {
-		mtaChain = processors.NewDkimVerifier(mtaChain)
+		mtaChain = process.NewDkimVerifier(mtaChain)
 	}
 
 	// SPF checker
 	// Virus scanner
 	// Spam filter
+	SeedData(db)
 
-	SeedData(login)
-
-	smtp.StartMsa(msaChain, login, tlsConfig)
-	smtp.StartMta(mtaChain, tlsConfig)
-	imap.StartImap(login, db, tlsConfig)
-	web.StartWebAdmin(login, db, tlsConfig)
+	smtp.StartMsa(db, msaChain, tlsConfig)
+	smtp.StartMta(db, mtaChain, tlsConfig)
+	imap.StartImap(db, tlsConfig)
+	web.StartWebAdmin(db, tlsConfig)
 
 	if config.GetBool(config.FakeDns) {
 		StartFakeDns(config.GetString(config.FakeDnsAddress), "udp")
@@ -51,18 +51,16 @@ func main() {
 	select {}
 }
 
-func SeedData(login database.Login) {
+func SeedData(db *sql.DB) {
 	var pw string
 	if config.GetString(config.AdminPassword) == "" {
 		pw = randSeq(8)
 	} else {
 		pw = config.GetString(config.AdminPassword)
 	}
-
-	usr, err := login.NewUser(config.GetString(config.AdminUsername),
-		pw, true)
+	user, err := logic.NewUser(db, config.GetString(config.AdminUsername), pw, true)
 	if err == nil {
-		log.Printf("Generated admin user: %v password %v", usr.Username, pw)
+		log.Printf("Generated admin user: %v password %v", user.Username, pw)
 	}
 }
 

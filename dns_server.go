@@ -20,7 +20,7 @@ func StartFakeDns(addr, proto string) {
 		Net:  proto,
 	}
 	dns.HandleFunc(config.GetString(config.Domain)+".", func(writer dns.ResponseWriter, r *dns.Msg) {
-		//log.Printf("Request %v", r)
+		//log.Printf("DNS Request %v", r)
 		m := new(dns.Msg)
 		m.SetReply(r)
 		for _, q := range r.Question {

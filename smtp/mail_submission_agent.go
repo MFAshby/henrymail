@@ -3,12 +3,12 @@ package smtp
 import (
 	"bytes"
 	"crypto/tls"
+	"database/sql"
 	"github.com/emersion/go-message"
 	"github.com/emersion/go-smtp"
 	"henrymail/config"
-	"henrymail/database"
-	"henrymail/model"
-	"henrymail/processors"
+	"henrymail/logic"
+	"henrymail/process"
 	"io"
 	"io/ioutil"
 	"log"
@@ -18,10 +18,10 @@ import (
 /**
  * Accepts new mail from our own users for sending
  */
-func StartMsa(proc processors.MsgProcessor, lg database.Login, tls *tls.Config) {
-	be := &sbe{
+func StartMsa(db *sql.DB, proc process.MsgProcessor, tls *tls.Config) {
+	be := &smtpSubmissionBackend{
+		db:   db,
 		proc: proc,
-		lg:   lg,
 	}
 	s := smtp.NewServer(be)
 	s.Addr = config.GetString(config.MsaAddress)
@@ -40,32 +40,32 @@ func StartMsa(proc processors.MsgProcessor, lg database.Login, tls *tls.Config) 
 	}()
 }
 
-type sbe struct {
-	proc processors.MsgProcessor
-	lg   database.Login
+type smtpSubmissionBackend struct {
+	db   *sql.DB
+	proc process.MsgProcessor
 }
 
-func (b *sbe) Login(username, password string) (smtp.User, error) {
-	user, e := b.lg.Login(username, password)
+func (b *smtpSubmissionBackend) Login(username, password string) (smtp.User, error) {
+	user, e := logic.Login(b.db, username, password)
 	if e != nil {
 		return nil, e
 	}
-	return &sus{
-		proc: b.proc,
-		u:    user,
+	return &smtpUser{
+		proc:   b.proc,
+		userid: user.ID,
 	}, nil
 }
 
-func (b *sbe) AnonymousLogin() (smtp.User, error) {
+func (b *smtpSubmissionBackend) AnonymousLogin() (smtp.User, error) {
 	return nil, smtp.ErrAuthRequired
 }
 
-type sus struct {
-	proc processors.MsgProcessor
-	u    *model.Usr
+type smtpUser struct {
+	proc   process.MsgProcessor
+	userid int
 }
 
-func (u *sus) Send(from string, to []string, r io.Reader) error {
+func (u *smtpUser) Send(from string, to []string, r io.Reader) error {
 	content, e := ioutil.ReadAll(r)
 	// Check we can read all the content
 	if e != nil {
@@ -78,13 +78,13 @@ func (u *sus) Send(from string, to []string, r io.Reader) error {
 	}
 
 	// Pass it on
-	return u.proc.Process(&model.ReceivedMsg{
+	return u.proc.Process(&process.ReceivedMsg{
 		From:    from,
 		To:      to,
 		Content: content,
 	})
 }
 
-func (*sus) Logout() error {
+func (*smtpUser) Logout() error {
 	return nil
 }

@@ -1,7 +1,6 @@
-package processors
+package process
 
 import (
-	"henrymail/model"
 	"log"
 )
 
@@ -13,7 +12,7 @@ type logger struct {
 	next MsgProcessor
 }
 
-func (l logger) Process(w *model.ReceivedMsg) error {
+func (l logger) Process(w *ReceivedMsg) error {
 	log.Print("From: ", w.From)
 	log.Print("To: ", w.To)
 	log.Println("Content:", string(w.Content))

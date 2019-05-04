@@ -2,10 +2,10 @@ package web
 
 import (
 	"crypto/tls"
+	"database/sql"
 	"github.com/gorilla/mux"
 	"henrymail/config"
-	"henrymail/database"
-	"henrymail/model"
+	"henrymail/models"
 	"html/template"
 	"log"
 	"net"
@@ -23,12 +23,11 @@ type view struct {
 
 // Data that's required to render header / navigation / footer
 type layoutData struct {
-	CurrentUser *model.Usr
+	CurrentUser *models.User
 }
 
 type wa struct {
-	lg        database.Login
-	db        database.Database
+	db        *sql.DB
 	jwtSecret []byte
 
 	// All views are pre-loaded
@@ -79,15 +78,14 @@ func (wa *wa) renderError(w http.ResponseWriter, err error) {
 	wa.errorView.render(w, err)
 }
 
-func (wa *wa) layoutData(u *model.Usr) (*layoutData, error) {
+func (wa *wa) layoutData(u *models.User) (*layoutData, error) {
 	return &layoutData{
 		CurrentUser: u,
 	}, nil
 }
 
-func StartWebAdmin(lg database.Login, db database.Database, tlsC *tls.Config) {
+func StartWebAdmin(db *sql.DB, tlsC *tls.Config) {
 	webAdmin := wa{
-		lg:                 lg,
 		db:                 db,
 		jwtSecret:          loadJwtSecret(),
 		loginView:          newView("login.html", "/templates/login.html"),

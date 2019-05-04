@@ -14,8 +14,12 @@ require (
 	github.com/gorilla/mux v1.6.2
 	github.com/mattn/go-sqlite3 v1.10.0
 	github.com/miekg/dns v1.1.3
+	github.com/pkg/errors v0.8.0
 	github.com/robfig/cron v0.0.0-20180505203441-b41be1df6967
 	github.com/spf13/viper v1.3.1
+	github.com/xo/xo v0.0.0-20190105221319-1a94fa516029
+	github.com/xo/xoutil v0.0.0-20171112033149-46189f4026a5
 	golang.org/x/crypto v0.0.0-20190103213133-ff983b9c42bc
 	golang.org/x/net v0.0.0-20190125091013-d26f9f9a57f3 // indirect
+	golang.org/x/sync v0.0.0-20190423024810-112230192c58 // indirect
 )

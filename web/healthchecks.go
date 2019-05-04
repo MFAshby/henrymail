@@ -3,14 +3,14 @@ package web
 import (
 	"henrymail/config"
 	"henrymail/dkim"
-	"henrymail/model"
+	"henrymail/models"
 	"henrymail/spf"
 	"net"
 	"net/http"
 	"strings"
 )
 
-func (wa *wa) healthChecks(w http.ResponseWriter, r *http.Request, u *model.Usr) {
+func (wa *wa) healthChecks(w http.ResponseWriter, r *http.Request, u *models.User) {
 	ld, e := wa.layoutData(u)
 	if e != nil {
 		wa.renderError(w, e)

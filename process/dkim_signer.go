@@ -1,11 +1,10 @@
-package processors
+package process
 
 import (
 	"bytes"
 	"crypto/rsa"
 	"github.com/emersion/go-dkim"
 	"henrymail/config"
-	"henrymail/model"
 )
 
 type dkimSigner struct {
@@ -13,7 +12,7 @@ type dkimSigner struct {
 	next MsgProcessor
 }
 
-func (d dkimSigner) Process(msg *model.ReceivedMsg) error {
+func (d dkimSigner) Process(msg *ReceivedMsg) error {
 	options := &dkim.SignOptions{
 		Domain:   config.GetString(config.Domain),
 		Selector: "mx",

@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"henrymail/config"
-	"henrymail/model"
+	"henrymail/logic"
+	"henrymail/models"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -14,11 +15,11 @@ import (
 	"time"
 )
 
-type AuthenticatedHandler = func(w http.ResponseWriter, r *http.Request, u *model.Usr)
+type AuthenticatedHandler = func(w http.ResponseWriter, r *http.Request, u *models.User)
 
 type UserClaims struct {
 	jwt.StandardClaims
-	*model.Usr
+	*models.User
 }
 
 func (c UserClaims) Valid() error {
@@ -56,7 +57,7 @@ func (wa *wa) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	usr, err := wa.lg.Login(username, password)
+	usr, err := logic.Login(wa.db, username, password)
 	if err != nil {
 		wa.loginView.render(w, err)
 		return
@@ -95,7 +96,7 @@ func (wa *wa) logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (wa *wa) checkAdmin(next AuthenticatedHandler) http.Handler {
-	return wa.checkLogin(func(w http.ResponseWriter, r *http.Request, user *model.Usr) {
+	return wa.checkLogin(func(w http.ResponseWriter, r *http.Request, user *models.User) {
 		if !user.Admin {
 			wa.renderError(w, errors.New("You are not an administrator"))
 			return
@@ -127,6 +128,6 @@ func (wa *wa) checkLogin(next AuthenticatedHandler) http.Handler {
 			http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
 			return
 		}
-		next(w, r, claims.Usr)
+		next(w, r, claims.User)
 	})
 }

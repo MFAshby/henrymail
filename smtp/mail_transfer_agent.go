@@ -3,12 +3,11 @@ package smtp
 import (
 	"bytes"
 	"crypto/tls"
+	"database/sql"
 	"github.com/emersion/go-message"
 	"github.com/emersion/go-smtp"
 	"henrymail/config"
-	"henrymail/database"
-	"henrymail/model"
-	"henrymail/processors"
+	"henrymail/process"
 	"io"
 	"io/ioutil"
 	"log"
@@ -18,8 +17,9 @@ import (
 /**
  * Accepts new mail from other servers
  */
-func StartMta(proc processors.MsgProcessor, tls *tls.Config) {
-	b := &tbe{
+func StartMta(db *sql.DB, proc process.MsgProcessor, tls *tls.Config) {
+	b := &smtpTransferBackend{
+		db:   db,
 		proc: proc,
 	}
 	s := smtp.NewServer(b)
@@ -40,24 +40,24 @@ func StartMta(proc processors.MsgProcessor, tls *tls.Config) {
 	}()
 }
 
-type tbe struct {
-	proc processors.MsgProcessor
-	lg   database.Login
+type smtpTransferBackend struct {
+	db   *sql.DB
+	proc process.MsgProcessor
 }
 
-func (b *tbe) Login(username, password string) (smtp.User, error) {
+func (b *smtpTransferBackend) Login(username, password string) (smtp.User, error) {
 	return nil, smtp.ErrAuthUnsupported
 }
 
-func (b *tbe) AnonymousLogin() (smtp.User, error) {
-	return &tus{proc: b.proc}, nil
+func (b *smtpTransferBackend) AnonymousLogin() (smtp.User, error) {
+	return &smtpTransferUser{proc: b.proc}, nil
 }
 
-type tus struct {
-	proc processors.MsgProcessor
+type smtpTransferUser struct {
+	proc process.MsgProcessor
 }
 
-func (u *tus) Send(from string, to []string, r io.Reader) error {
+func (u *smtpTransferUser) Send(from string, to []string, r io.Reader) error {
 	content, e := ioutil.ReadAll(r)
 	// Check we can read all the content
 	if e != nil {
@@ -70,13 +70,13 @@ func (u *tus) Send(from string, to []string, r io.Reader) error {
 	}
 
 	// Pass it on
-	return u.proc.Process(&model.ReceivedMsg{
+	return u.proc.Process(&process.ReceivedMsg{
 		From:    from,
 		To:      to,
 		Content: content,
 	})
 }
 
-func (*tus) Logout() error {
+func (*smtpTransferUser) Logout() error {
 	return nil
 }

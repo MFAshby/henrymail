@@ -1,11 +1,12 @@
 package web
 
 import (
-	"henrymail/model"
+	"henrymail/logic"
+	"henrymail/models"
 	"net/http"
 )
 
-func (wa *wa) changePassword(w http.ResponseWriter, r *http.Request, u *model.Usr) {
+func (wa *wa) changePassword(w http.ResponseWriter, r *http.Request, u *models.User) {
 	ld, e := wa.layoutData(u)
 	if e != nil {
 		wa.renderError(w, e)
@@ -19,9 +20,10 @@ func (wa *wa) changePassword(w http.ResponseWriter, r *http.Request, u *model.Us
 		"",
 	}
 	if r.Method == http.MethodPost {
-		password := r.FormValue("password")
-		password2 := r.FormValue("password2")
-		err := wa.lg.ChangePassword(u.Username, password, password2)
+		oldPassword := r.FormValue("oldpassword")
+		newPassword := r.FormValue("newpassword")
+		newPassword2 := r.FormValue("newpassword2")
+		err := logic.ChangePassword(wa.db, u.Username, oldPassword, newPassword, newPassword2)
 		if err != nil {
 			data.Message = err.Error()
 		} else {

@@ -1,6 +1,12 @@
+# Executable and runtime files
 henrymail
 henrymail.db
 henrymail.prop
 keys/
-web/embedded.go
+
+# IDE stuff
 .idea/
+
+# Generated code
+web/embedded.go
+models/

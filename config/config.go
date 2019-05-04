@@ -151,7 +151,7 @@ func SetupConfig() {
 
 func SetupResolver() {
 	net.DefaultResolver = &net.Resolver{
-		PreferGo: false,
+		PreferGo: true,
 		Dial: func(ctx context.Context, network, address string) (conn net.Conn, e error) {
 			d := net.Dialer{}
 			return d.DialContext(ctx, network, GetString(DnsServer))

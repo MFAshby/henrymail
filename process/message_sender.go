@@ -1,15 +1,18 @@
-package processors
+package process
 
 import (
 	"bytes"
 	"crypto/tls"
+	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/emersion/go-message"
 	"github.com/robfig/cron"
+	"github.com/xo/xoutil"
 	"henrymail/config"
 	"henrymail/database"
-	"henrymail/model"
+	"henrymail/logic"
+	"henrymail/models"
 	"html/template"
 	"log"
 	"net"
@@ -23,10 +26,11 @@ import (
  * Store messages and retry them later
  */
 type sender struct {
-	db database.Database
+	db *sql.DB
+	cr *cron.Cron
 }
 
-func (s *sender) Process(w *model.ReceivedMsg) error {
+func (s *sender) Process(w *ReceivedMsg) error {
 	errs := make([]string, 0)
 	for _, to := range w.To {
 		err := s.sendOrStoreForRetry(to, w.From, w.Timestamp, w.Content)
@@ -45,8 +49,16 @@ func (s *sender) sendOrStoreForRetry(to, from string, timestamp time.Time, conte
 	if e := s.sendTo(to, from, content); e == nil {
 		return nil
 	}
-	_, e := s.db.InsertQueue(from, to, content, timestamp)
-	return e
+	//TODO check the severity of the error
+	// Should check if the error is fatal or not really
+	q := &models.Queue{
+		Msgto:   to,
+		Msgfrom: from,
+		Ts:      xoutil.SqTime{Time: timestamp},
+		Retries: 0,
+		Content: content,
+	}
+	return q.Save(s.db)
 }
 
 /**
@@ -54,19 +66,20 @@ func (s *sender) sendOrStoreForRetry(to, from string, timestamp time.Time, conte
  */
 func (s *sender) sendTo(to, from string, content []byte) error {
 	parts := strings.Split(to, "@")
-	host := parts[1]
-	mxes, e := net.LookupMX(host)
+	domain := parts[1]
+	mxes, e := net.LookupMX(domain)
 	if e != nil {
 		return e
 	}
 
 	if len(mxes) == 0 {
-		return errors.New("no MX records found for host " + host)
+		return errors.New("no MX records found for domain " + domain)
 	}
 
 	errs := make([]string, 0)
 	for _, mx := range mxes {
-		e = s.sendToHost(to, from, mx.Host, content)
+		mailServer := strings.TrimRight(mx.Host, ".")
+		e = s.sendToHost(to, from, mailServer, content)
 		if e == nil {
 			// If any server accepted the message then discard any errors,
 			return nil
@@ -119,33 +132,35 @@ func (s *sender) sendToHost(to, from, host string, content []byte) error {
 }
 
 func (s *sender) doRetries() {
-	msgs, err := s.db.GetQueue()
+	queue, err := models.GetAllQueue(s.db)
 	if err != nil {
-		// Somehow we should alert, but smth is already wrong I guess
+		//TODO alert for asynchronous errors of some kind (email to admin?)
 		log.Println(err)
 		return
 	}
 
-	for _, q := range msgs {
-		err := s.sendTo(q.To, q.From, q.Content)
+	for _, q := range queue {
+		err := s.sendTo(q.Msgto, q.Msgfrom, q.Content)
+		//TODO refine & document conditions for retries
 		if err != nil {
 			if q.Retries >= config.GetInt(config.RetryCount) {
-				err = s.sendFailureNotification(q.To, q.From, q.Content, q.Retries)
+				err = s.sendFailureNotification(q.Msgto, q.Msgfrom, q.Content, q.Retries)
 				if err != nil {
 					log.Println(err)
 				}
-				err = s.db.DeleteQueue(q.Id)
+				err = q.Delete(s.db)
 				if err != nil {
 					log.Println(err)
 				}
 			} else {
-				err = s.db.IncrementRetries(q.Id)
+				q.Retries += 1
+				err = q.Save(s.db)
 				if err != nil {
 					log.Println(err)
 				}
 			}
 		} else {
-			err = s.db.DeleteQueue(q.Id)
+			err = q.Delete(s.db)
 			if err != nil {
 				log.Println(err)
 			}
@@ -155,8 +170,7 @@ func (s *sender) doRetries() {
 
 func (s *sender) sendFailureNotification(originalMsgTo, originalMsgFrom string, content []byte, retries int) error {
 	// We will only be sending failure notifications to our own users.
-	// so we can go direct to the database instead of talking to ourselves via SMTP.
-	ibxId, e := s.db.GetInboxId(originalMsgFrom)
+	inbox, e := logic.FindInbox(s.db, originalMsgFrom)
 	if e != nil {
 		return e
 	}
@@ -196,19 +210,27 @@ func (s *sender) sendFailureNotification(originalMsgTo, originalMsgFrom string, 
 		return e
 	}
 
-	// Save directly to the database
 	buffer := new(bytes.Buffer)
-	_ = retryNotification.WriteTo(buffer)
-	_, e = s.db.InsertMessage(buffer.Bytes(), []string{}, ibxId, time.Now())
-	return e
+	e = retryNotification.WriteTo(buffer)
+	if e != nil {
+		return e
+	}
+
+	return database.Transact(s.db, func(tx *sql.Tx) error {
+		return logic.SaveMessages(tx, inbox, &models.Message{
+			Content:   buffer.Bytes(),
+			Flagsjson: []byte("[]"),
+			Ts:        xoutil.SqTime{Time: time.Now()},
+		})
+	})
 }
 
-func NewSender(db database.Database) *sender {
+func NewSender(db *sql.DB) *sender {
 	sender := &sender{
 		db: db,
+		cr: cron.New(),
 	}
-	cr := cron.New()
-	err := cr.AddFunc(config.GetString(config.RetryCronSpec), sender.doRetries)
+	err := sender.cr.AddFunc(config.GetString(config.RetryCronSpec), sender.doRetries)
 	if err != nil {
 		log.Fatal(err)
 	}

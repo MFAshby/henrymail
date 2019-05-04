@@ -1,3 +1,4 @@
-go generate web/web.go \
+#!/usr/bin/env bash
+go generate ./... \
 	&& go build \
 	&& ./henrymail
