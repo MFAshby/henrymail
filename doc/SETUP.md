@@ -70,7 +70,7 @@ export PATH=$PATH:~/go/bin/
 
 Next you need to download the source code for henrymail
 ```bash
-git clone https://gogs.mfashby.net/martin/henrymail.git
+git clone https://github.com/MFAshby/henrymail.git
 cd henrymail
 ```
 Then build it
@@ -100,8 +100,8 @@ These commands download the sample configuration file, and open it
 for editing with nano. 
 ```bash
 mkdir /etc/henrymail
-wget -O /etc/systemd/system/henrymail.service https://gogs.mfashby.net/martin/henrymail/raw/master/henrymail.service
-wget -O /etc/henrymail/henrymail.prop https://gogs.mfashby.net/martin/henrymail/raw/master/henrymail.sample.prop
+wget -O /etc/systemd/system/henrymail.service https://github.com/MFAshby/henrymail/raw/master/henrymail.service
+wget -O /etc/henrymail/henrymail.prop https://github.com/MFAshby/henrymail/raw/master/henrymail.sample.prop
 nano /etc/henrymail/henrymail.prop
 ```
 

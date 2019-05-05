@@ -19,7 +19,7 @@ security issues, or bugs that will result in data-loss.
 It has not yet been translated or tested for accessibilty.
 Use it at your own risk. If you choose to use it, 
 I would love to hear your feedback. Please raise any 
-issues [in the project repository](https://gogs.mfashby.net/martin/henrymail/issues)
-, or [send me an email](martin@ashbysoft.com)
+issues [in the project repository](https://github.com/MFAshby/henrymail/issues)
+, or [send me an email](mailto:martin@ashbysoft.com)
 
 [Installation and usage](doc/SETUP.md)
