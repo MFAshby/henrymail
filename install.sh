@@ -33,3 +33,9 @@ wget -O /etc/systemd/system/henrymail.service https://github.com/MFAshby/henryma
 systemctl daemon-reload
 systemctl enable henrymail
 systemctl start henrymail
+
+#Download the uninstall script
+wget https://raw.githubusercontent.com/MFAshby/henrymail/master/uninstall.sh
+chmod +x uninstall.sh
+
+echo Run ./uninstall.sh to uninstall!
