@@ -6,10 +6,10 @@ generate:
 	@ go generate ./...
 
 build: generate
-	@ go build -o $(APP)
+	@ go build -o dist/$(APP)
 
 clean:
-	@ rm -f $(APP)
+	@ rm -rf dist/ models/
 
 test: build
 	go test -cover -race -count=1 ./...

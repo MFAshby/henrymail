@@ -10,3 +10,6 @@ keys/
 # Generated code
 web/embedded.go
 models/
+
+# Build products
+dist/
