@@ -5,3 +5,5 @@ systemctl disable henrymail
 rm -rf /etc/henrymail /var/lib/henrymail /usr/local/bin/henrymail /etc/systemd/system/henrymail.service
 userdel henrymail
 systemctl daemon-reload
+rm install.sh
+rm uninstall.sh
