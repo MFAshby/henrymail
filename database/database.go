@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
 	"henrymail/config"
-	"io/ioutil"
+	"henrymail/embedded"
 	"log"
 )
 
@@ -15,7 +15,7 @@ func OpenDatabase() *sql.DB {
 	if err != nil {
 		log.Fatal(err)
 	}
-	initSqlBytes, err := ioutil.ReadFile("database/generate_schema.sql")
+	initSqlBytes, err := embedded.GetEmbeddedContent().GetContents("/database/generate_schema.sql")
 	if err != nil {
 		log.Fatal(err)
 	}
