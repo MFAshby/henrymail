@@ -1,9 +1,14 @@
 language: go
+# Install build tools in the regular gopath (skip go.mod)
 before_install:
   - GO111MODULE=off go get github.com/aprice/embed/cmd/embed
   - GO111MODULE=off go get golang.org/x/tools/cmd/goimports
   - GO111MODULE=off go get github.com/xo/xo
+  - GO111MODULE=off go get golang.org/x/lint/golint
 go:
   - 1.11.4
+# Enable go.mod for the build
 env:
   - GO111MODULE=on
+# Skip travis' magic installation of dependencies (we're using go.mod)
+install: true
