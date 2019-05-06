@@ -75,7 +75,6 @@ const (
 	//SpfMandatory = "SpfMandatory" // Reject messages that aren't SPF verified
 
 	// Web auth tokens
-	JwtTokenSecretFile   = "JwtTokenSecretFile"
 	JwtCookieName        = "JwtCookieName"
 	CookieDomainOverride = "CookieDomainOverride"
 
@@ -121,7 +120,6 @@ func SetupConfig() {
 	viper.SetDefault(DkimVerify, true)
 	viper.SetDefault(DkimKeyBits, 2048)
 
-	viper.SetDefault(JwtTokenSecretFile, "keys/jwt-secret")
 	viper.SetDefault(JwtCookieName, "henrymail_jwt_token")
 
 	viper.SetDefault(DnsServer, "208.67.222.222:53") // OpenDNS

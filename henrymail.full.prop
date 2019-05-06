@@ -139,12 +139,6 @@ DkimVerify         = true
 ; emails from poorly configured email domains.
 DkimMandatory      = false
 
-; Where to store the public & private keys for DKIM signing. The key is stored
-; in PEM format. The key pair will be automatically generated on server startup
-; if it does not already exist.
-DkimPrivateKeyFile = keys/dkim-private.pem
-DkimPublicKeyFile  = keys/dkim-public.pem
-
 ; The length of the DKIM signing key. 2048 is a safe default. 1024 is the minimum
 ; recommended setting.
 DkimKeyBits        = 2048
@@ -157,10 +151,6 @@ SpfVerify = true
 ; Enabling this setting can reduce spam, however it will also reject any
 ; emails from poorly configured email domains.
 SpfMandatory = false
-
-; This setting controls where to store the secret key for JWT authentication in the
-; web interface
-JwtTokenSecretFile   = keys/jwt-secret
 
 ; This setting controls the name of the cookie that's stored in users' browsers for
 ; authentication

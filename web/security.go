@@ -19,6 +19,15 @@ func (wa *wa) security(w http.ResponseWriter, r *http.Request, u *models.User) {
 }
 
 func (wa *wa) rotateJwt(w http.ResponseWriter, r *http.Request, u *models.User) {
-	wa.jwtSecret = generateAndSaveJwtSecret()
+	key, e := models.KeyByName(wa.db, JwtSecretKeyName)
+	if e != nil {
+		wa.renderError(w, e)
+		return
+	}
+	e = key.Delete(wa.db)
+	if e != nil {
+		wa.renderError(w, e)
+		return
+	}
 	http.Redirect(w, r, "security", http.StatusFound)
 }

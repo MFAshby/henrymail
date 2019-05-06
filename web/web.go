@@ -26,8 +26,7 @@ type layoutData struct {
 }
 
 type wa struct {
-	db        *sql.DB
-	jwtSecret []byte
+	db *sql.DB
 
 	// All views are pre-loaded
 	loginView          *view
@@ -86,7 +85,6 @@ func (wa *wa) layoutData(u *models.User) (*layoutData, error) {
 func StartWebAdmin(db *sql.DB, tlsC *tls.Config) {
 	webAdmin := wa{
 		db:                 db,
-		jwtSecret:          loadJwtSecret(),
 		loginView:          newView("login.html", "/templates/login.html"),
 		changePasswordView: newView("index.html", "/templates/change_password.html"),
 		usersView:          newView("index.html", "/templates/users.html"),

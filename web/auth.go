@@ -8,10 +8,8 @@ import (
 	"henrymail/config"
 	"henrymail/logic"
 	"henrymail/models"
-	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -26,27 +24,34 @@ func (c UserClaims) Valid() error {
 	return c.StandardClaims.Valid()
 }
 
-func loadJwtSecret() []byte {
-	jwtSecret, e := ioutil.ReadFile(config.GetString(config.JwtTokenSecretFile))
-	if os.IsNotExist(e) {
-		jwtSecret = generateAndSaveJwtSecret()
-	} else if e != nil {
-		log.Fatal(e)
-	}
-	return jwtSecret
-}
+const (
+	JwtSecretKeyName = "jwt_secret"
+)
 
-func generateAndSaveJwtSecret() []byte {
-	jwtSecret := make([]byte, 64)
-	_, e := rand.Read(jwtSecret)
+func (w *wa) jwtSecret() []byte {
+	key, e := models.KeyByName(w.db, JwtSecretKeyName)
 	if e != nil {
-		log.Fatal(e)
+		log.Print(e)
+		log.Println("Generating new jwtSecret")
+		newSecret := make([]byte, 64)
+		_, e := rand.Read(newSecret)
+		if e != nil {
+			// Unable to generate a random key, can't recover
+			log.Fatal(e)
+		}
+
+		if key == nil {
+			key = &models.Key{
+				Name: JwtSecretKeyName,
+			}
+		}
+		key.Key = newSecret
+		e = key.Save(w.db)
+		if e != nil {
+			log.Fatal(e)
+		}
 	}
-	e = ioutil.WriteFile(config.GetString(config.JwtTokenSecretFile), jwtSecret, 0700)
-	if e != nil {
-		log.Fatal(e)
-	}
-	return jwtSecret
+	return key.Key
 }
 
 func (wa *wa) login(w http.ResponseWriter, r *http.Request) {
@@ -67,7 +72,7 @@ func (wa *wa) login(w http.ResponseWriter, r *http.Request) {
 		jwt.StandardClaims{},
 		usr,
 	})
-	tokenString, err := token.SignedString(wa.jwtSecret)
+	tokenString, err := token.SignedString(wa.jwtSecret())
 	if err != nil {
 		wa.loginView.render(w, err)
 		return
@@ -117,7 +122,7 @@ func (wa *wa) checkLogin(next AuthenticatedHandler) http.Handler {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 			}
-			return wa.jwtSecret, nil
+			return wa.jwtSecret(), nil
 		})
 		if err != nil {
 			http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
