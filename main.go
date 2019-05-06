@@ -15,6 +15,9 @@ import (
 	"math/rand"
 )
 
+//go:generate mkdir -p embedded
+//go:generate embed
+
 func main() {
 	config.SetupConfig()
 	config.SetupResolver()

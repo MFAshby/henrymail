@@ -8,7 +8,7 @@ keys/
 .idea/
 
 # Generated code
-web/embedded.go
+embedded/
 models/
 
 # Build products

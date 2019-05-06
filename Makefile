@@ -9,7 +9,7 @@ build: generate
 	@ go build -o dist/$(APP)
 
 clean:
-	@ rm -rf dist/ models/
+	@ rm -rf dist/ models/ embedded/
 
 test: build
 	go test -cover -race -count=1 ./...

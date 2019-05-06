@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"github.com/gorilla/mux"
 	"henrymail/config"
+	"henrymail/embedded"
 	"henrymail/models"
 	"html/template"
 	"log"
@@ -12,8 +13,6 @@ import (
 	"net/http"
 	"path"
 )
-
-//go:generate embed -c "embed.json"
 
 // A page in the application
 type view struct {
@@ -48,7 +47,7 @@ func newView(layout string, files ...string) *view {
 	)
 	var t *template.Template = nil
 	for _, file := range files {
-		contents, e := GetEmbeddedContent().GetContents(file)
+		contents, e := embedded.GetEmbeddedContent().GetContents(file)
 		if e != nil {
 			log.Fatal(e)
 		}
@@ -102,7 +101,7 @@ func StartWebAdmin(db *sql.DB, tlsC *tls.Config) {
 	router.Handle("/", http.RedirectHandler("/changePassword", http.StatusTemporaryRedirect))
 	router.Handle("/changePassword", webAdmin.checkLogin(webAdmin.changePassword))
 
-	router.PathPrefix("/assets/").Handler(GetEmbeddedContent())
+	router.PathPrefix("/assets/").Handler(embedded.GetEmbeddedContent())
 
 	admin := router.PathPrefix("/admin/").Subrouter()
 	admin.Handle("/users", webAdmin.checkAdmin(webAdmin.users))

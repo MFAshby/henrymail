@@ -2,10 +2,10 @@
   "RootPath": ".",
   "Recurse": true,
   "IncludePattern": "",
-  "ExcludePattern": "(^\\.|\\.go$)",
-  "OutputPath": "embedded.go",
+  "ExcludePattern": "(^\\.|\\.go$|dist/)",
+  "OutputPath": "embedded/embedded.go",
   "BuildConstraints": "",
-  "PackageName": "web",
+  "PackageName": "embedded",
   "DevOutputPath": "",
   "DevBuildConstraints": "",
   "MinifyTypes": {
