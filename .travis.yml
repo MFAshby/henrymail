@@ -17,3 +17,4 @@ deploy:
   on:
     repo: MFAshby/henrymail
     branch: master
+  prerelease: true
