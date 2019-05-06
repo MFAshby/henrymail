@@ -21,21 +21,11 @@ mkdir -p /etc/henrymail
 wget -O - https://raw.githubusercontent.com/MFAshby/henrymail/master/henrymail.sample.prop \
  | sed s/example.com/${DOMAIN}/ - > /etc/henrymail/henrymail.prop
 
-# Run once to get admin user
-echo "Running henrymail for the first time: note the administrator username and password \
-then press ctrl+c to close"
-pushd /var/lib/henrymail
-sudo -u henrymail henrymail
-popd
-
 # Download the systemd service definition and start
 wget -O /etc/systemd/system/henrymail.service https://github.com/MFAshby/henrymail/raw/master/henrymail.service
 systemctl daemon-reload
 systemctl enable henrymail
 systemctl start henrymail
 
-#Download the uninstall script
-wget https://raw.githubusercontent.com/MFAshby/henrymail/master/uninstall.sh
-chmod +x uninstall.sh
-
-echo Run ./uninstall.sh to uninstall!
+# Grep the admin password out of the logs
+journalctl -u henrymail | grep Generated

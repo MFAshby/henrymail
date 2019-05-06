@@ -49,39 +49,18 @@ password, you'll be presented with a terminal like this in your browser:
 
 ![digital ocean droplet console](img/digitalocean_droplet_terminal.png)  
 
-You can then run the following commands to download and install the software.
-Copy each line into the terminal and press enter to run it. Make sure
-to check for error messages after each one. You may need to work out what 
-has gone wrong 
+You can then copy & paste the following command into the terminal and 
+press enter to run it. This will download and install the software.
+You will be prompted for the domain you want to serve (e.g. mfashby.net)
+
+The administrator username and password will be shown in the terminal. 
+Note them down. Once the script has finished, the server will be running!
  
 ```bash
-# Download the binary, make it executable and allow binding low ports
-wget -O /usr/local/bin/henrymail https://github.com/MFAshby/henrymail/releases/download/0.0.1/henrymail
-chmod +x /usr/local/bin/henrymail
-setcap 'cap_net_bind_service=+ep' /usr/local/bin/henrymail
-
-# Create a user for running henrymail
-useradd -r henrymail
-
-# Create a data directory for storing the database and set ownership
-mkdir -p /var/lib/henrymail
-chown henrymail:henrymail /var/lib/henrymail 
-
-# Download the sample config file, we'll edit this
-mkdir -p /etc/henrymail
-wget -O /etc/henrymail/henrymail.prop https://raw.githubusercontent.com/MFAshby/henrymail/master/henrymail.sample.prop
-
-# Download the systemd service definition 
-wget -O /etc/systemd/system/henrymail.service https://github.com/MFAshby/henrymail/raw/master/henrymail.service
+wget https://raw.githubusercontent.com/MFAshby/henrymail/master/install.sh \
+ && chmod +x install.sh \
+ && sudo ./install.sh
 ```
-
-Now you need to edit the configuration file `/etc/henrymail/henrymail.prop`.
-You can use your favourite command-line text editor, or nano e.g. 
-`nano /etc/henrymail/henrymail.prop`
- 
-Change `example.com` for your domain name (e.g. `mfashby.net`) everywhere
-that it appears in this file. Save the file and leave the terminal open, 
-we'll come back to it later to start the server for the first time. 
 
 Next we need to configure the DNS for your server. Log into Namecheap
 and navigate to `Dashboard` > `Manage` > `Advanced DNS`. 
@@ -94,15 +73,7 @@ save it.
 Allow a minute or so for this record to get updated across the DNS system. 
 You can check it's progress on [whatsmydns.net](https://www.whatsmydns.net)
 
-Return to the terminal, it's now time to start the henrymail server for 
-the first time and check it works:
-```bash
-cd /var/lib/henrymail
-sudo -u henrymail henrymail
-```
-
-The administrator username and a generated password will be shown in the 
-terminal. Note them down. Open your web browser to access the administration 
+Open your web browser to access the administration 
 interface, e.g. https://mail.mfashby.net/, and enter the username and password
 . Save the password to your password manager, or you can change the password 
 to something more memorable here if you want.
