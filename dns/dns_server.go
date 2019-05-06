@@ -1,4 +1,4 @@
-package main
+package dns
 
 import (
 	"github.com/miekg/dns"
@@ -10,11 +10,7 @@ import (
 	"strings"
 )
 
-/**
- * Fake DNS server for local testing.
- * This lets us pretend that our DKIM and TXT records are right
- */
-func StartFakeDns(addr, proto string) {
+func StartFakeDNS(addr, proto string) {
 	s := &dns.Server{
 		Addr: addr,
 		Net:  proto,
@@ -69,7 +65,7 @@ func chunk(buf string, lim int) []string {
 		chunks = append(chunks, chunk)
 	}
 	if len(buf) > 0 {
-		chunks = append(chunks, buf[:len(buf)])
+		chunks = append(chunks, buf[:])
 	}
 	return chunks
 }

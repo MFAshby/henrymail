@@ -5,6 +5,7 @@ import (
 	"henrymail/config"
 	"henrymail/database"
 	"henrymail/dkim"
+	"henrymail/dns"
 	"henrymail/imap"
 	"henrymail/logic"
 	"henrymail/process"
@@ -36,7 +37,7 @@ func main() {
 	// SPF checker
 	// Virus scanner
 	// Spam filter
-	SeedData(db)
+	seedData(db)
 
 	smtp.StartMsa(db, msaChain, tlsConfig)
 	smtp.StartMta(db, mtaChain, tlsConfig)
@@ -44,14 +45,14 @@ func main() {
 	web.StartWebAdmin(db, tlsConfig)
 
 	if config.GetBool(config.FakeDns) {
-		StartFakeDns(config.GetString(config.FakeDnsAddress), "udp")
+		dns.StartFakeDNS(config.GetString(config.FakeDnsAddress), "udp")
 	}
 
 	// Wait for exit
 	select {}
 }
 
-func SeedData(db *sql.DB) {
+func seedData(db *sql.DB) {
 	var pw string
 	if config.GetString(config.AdminPassword) == "" {
 		pw = randSeq(8)
