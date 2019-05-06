@@ -49,67 +49,39 @@ password, you'll be presented with a terminal like this in your browser:
 
 ![digital ocean droplet console](img/digitalocean_droplet_terminal.png)  
 
-You can then run the following commands to build and install the software.
+You can then run the following commands to download and install the software.
 Copy each line into the terminal and press enter to run it. Make sure
 to check for error messages after each one. You may need to work out what 
 has gone wrong 
-
-First you need to install the `gcc` and `go` compilers, and an `embed` tool. 
-Detailed instructions are available on the [go website](https://golang.org/doc/install), 
-but the following commands are a condensed version for this guide. 
+ 
 ```bash
-apt install -y gcc 
+# Download the binary, make it executable and allow binding low ports
+wget -O /usr/local/bin/henrymail https://github.com/MFAshby/henrymail/releases/download/0.0.1/henrymail
+chmod +x /usr/local/bin/henrymail
+setcap 'cap_net_bind_service=+ep' /usr/local/bin/henrymail
 
-wget https://dl.google.com/go/go1.11.5.linux-amd64.tar.gz
-tar -C /usr/local -xzf go1.11.5.linux-amd64.tar.gz
-export PATH=$PATH:/usr/local/go/bin
-
-go get github.com/aprice/embed/cmd/embed
-export PATH=$PATH:~/go/bin/
-```
-
-Next you need to download the source code for henrymail
-```bash
-git clone https://github.com/MFAshby/henrymail.git
-cd henrymail
-```
-Then build it
-```bash
-go generate web/web.go
-go build
-```
-Then copy it into place in the system, and allow it to be run as
-a program, and allow it to bind to the ports it needs
-```bash
-cp henrymail /usr/bin/henrymail
-chmod +x /usr/bin/henrymail
-setcap 'cap_net_bind_service=+ep' /usr/bin/henrymail
-```
-
-These commands create a new user to execute the program, and grant the 
-user access to the files and folders it needs (it's a good idea
-to do this, service software shouldn't usually be running as an 
-administrator for security reasons)
-```bash
+# Create a user for running henrymail
 useradd -r henrymail
-mkdir /var/lib/henrymail
-chown henrymail:henrymail /var/lib/henrymail
-```
 
-These commands download the sample configuration file, and open it
-for editing with nano. 
-```bash
-mkdir /etc/henrymail
+# Create a data directory for storing the database and set ownership
+mkdir -p /var/lib/henrymail
+chown henrymail:henrymail /var/lib/henrymail 
+
+# Download the sample config file, we'll edit this
+mkdir -p /etc/henrymail
+wget -O /etc/henrymail/henrymail.prop https://raw.githubusercontent.com/MFAshby/henrymail/master/henrymail.sample.prop
+
+# Download the systemd service definition 
 wget -O /etc/systemd/system/henrymail.service https://github.com/MFAshby/henrymail/raw/master/henrymail.service
-wget -O /etc/henrymail/henrymail.prop https://github.com/MFAshby/henrymail/raw/master/henrymail.sample.prop
-nano /etc/henrymail/henrymail.prop
 ```
 
+Now you need to edit the configuration file `/etc/henrymail/henrymail.prop`.
+You can use your favourite command-line text editor, or nano e.g. 
+`nano /etc/henrymail/henrymail.prop`
+ 
 Change `example.com` for your domain name (e.g. `mfashby.net`) everywhere
-that it appears in this file. Press `ctrl+x` to save, then press `Y` to save 
-changes. See [CONFIG.md](CONFIG.md) for an explanation
-of all the available configuration options in this file.
-Leave the terminal open, we'll come back to it later to start the server. 
+that it appears in this file. Save the file and leave the terminal open, 
+we'll come back to it later to start the server for the first time. 
 
 Next we need to configure the DNS for your server. Log into Namecheap
 and navigate to `Dashboard` > `Manage` > `Advanced DNS`. 
@@ -132,7 +104,8 @@ sudo -u henrymail henrymail
 The administrator username and a generated password will be shown in the 
 terminal. Note them down. Open your web browser to access the administration 
 interface, e.g. https://mail.mfashby.net/, and enter the username and password
-. You can change the password to something more memorable here if you want.
+. Save the password to your password manager, or you can change the password 
+to something more memorable here if you want.
 
 
 Now you can enable it as a service so it will start whenever your droplet 

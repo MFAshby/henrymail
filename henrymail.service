@@ -5,7 +5,7 @@ After=network.target
 [Service]
 User=henrymail
 WorkingDirectory=/var/lib/henrymail
-ExecStart=/usr/bin/henrymail
+ExecStart=/usr/local/bin/henrymail
 Restart=on-failure
 
 [Install]
