@@ -28,4 +28,4 @@ systemctl enable henrymail
 systemctl start henrymail
 
 # Grep the admin password out of the logs
-journalctl -u henrymail | grep Generated
+journalctl -fu henrymail | grep -qe Generated
