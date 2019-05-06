@@ -14,7 +14,7 @@ deploy:
   api_key:
     secure: tRGIav6mvfjCCVuHbyCRzsey2H4pbIVgbX+fxwyyxD7j8cPJauN0YNXoxnlj7TXV5INF0oYgPhIezPf9CrR1oNSB/MfLXqXN2mhejRIgTVg7nGuokTX3P8XBzlR1sa43Mcq0XyQ0CKKmfn/vt55+nJc1ZS1kgQlyW7hJS48/5Hpf1eQE+ltor/yaOugPIze+XasaP+NdWlafTWXSPmZEOKqRLzHm6esWuPZ8SvmxWV3AK8fgUKKL6TGL/11h3TJGomty2vQ81ZymLoL1KRqV39Y+5kdgtnEDBRb+D2AhHbTanhrcz1+cpYhHw6gbu7hvNw5MiMKuqLubHSNrMGdqUaoMsX+M0xB+cZm9amfsfsPLjGjFrBb5yyFWkzz31Fso3ifBDZbWWxiLxBcqOrKBBaRPmveVni6vgRtpXROw+CmlXEP1ze3DMla0X9BNUIrZiHHlFnsvejIKX/HM1Puq7+OEJWyLi5TUIPQyUo6v2srGX/jHarbdf13CRv4DjKkccZF9Kn+iaPu3gDf20DR2SLEIzcB3uCVy5/UV0/dI2qM8PUbjoU+SjLX6AJg23qwVrVEwVqzSyioujaIE0cjYQZzA+Yxpst3wxESsB3bSDHsP8hHZbkvpmPeOzpxaEN5e/XLrcFY9EOq2Lj76xEp/ymlIw3M+PSKZLIbVnZYlHvk=
   file: dist/henrymail
+  skip_cleanup: true
   on:
     repo: MFAshby/henrymail
-    branch: master
   prerelease: true
