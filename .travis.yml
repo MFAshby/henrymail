@@ -1,3 +1,7 @@
 language: go
+before_install:
+  - go get github.com/aprice/embed/cmd/embed
+  - go get golang.org/x/tools/cmd/goimports
+  - go get -u github.com/xo/xo
 go:
   - 1.11.4
