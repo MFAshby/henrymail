@@ -78,18 +78,6 @@ interface, e.g. https://mail.mfashby.net/, and enter the username and password
 . Save the password to your password manager, or you can change the password 
 to something more memorable here if you want.
 
-
-Now you can enable it as a service so it will start whenever your droplet 
-is restarted. Press `ctrl+c` to stop henrymail, then run the following:
-```bash
-systemctl daemon-reload
-systemctl enable henrymail
-systemctl start henrymail
-```
-
-Refresh the administration page again to check everything is working OK. 
-You can now close the terminal!
-
 We've almost got a working email server. Go back to Namecheap, and add 
 a Custom MX record with host set to `@`, and value set to your mail server's name (with a trailing dot!):
 ![namecheap add mx record screenshot](img/namecheap_add_mx.png)
