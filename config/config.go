@@ -65,12 +65,10 @@ const (
 	DefaultMailboxes = "DefaultMailboxes"
 
 	// DKIM
-	DkimSign           = "DkimSign"
-	DkimVerify         = "DkimVerify"
-	DkimMandatory      = "DkimMandatory" // Reject messages that aren't DKIM verified
-	DkimPrivateKeyFile = "DkimPrivateKeyFile"
-	DkimPublicKeyFile  = "DkimPublicKeyFile"
-	DkimKeyBits        = "DkimKeyBits"
+	DkimSign      = "DkimSign"
+	DkimVerify    = "DkimVerify"
+	DkimMandatory = "DkimMandatory" // Reject messages that aren't DKIM verified
+	DkimKeyBits   = "DkimKeyBits"
 
 	// SPF
 	//SpfVerify    = "SpfVerify"
@@ -121,8 +119,6 @@ func SetupConfig() {
 
 	viper.SetDefault(DkimSign, true)
 	viper.SetDefault(DkimVerify, true)
-	viper.SetDefault(DkimPrivateKeyFile, "keys/dkim-private.pem")
-	viper.SetDefault(DkimPublicKeyFile, "keys/dkim-public.pem")
 	viper.SetDefault(DkimKeyBits, 2048)
 
 	viper.SetDefault(JwtTokenSecretFile, "keys/jwt-secret")

@@ -28,7 +28,7 @@ func main() {
 	// submission agent processing chain
 	var msaChain process.MsgProcessor = process.NewSender(db)
 	if config.GetBool(config.DkimSign) {
-		msaChain = process.NewDkimSigner(dkim.GetOrCreateDkim(), msaChain)
+		msaChain = process.NewDkimSigner(dkim.GetOrCreateDkim(db), msaChain)
 	}
 
 	// transfer agent processing chain
@@ -48,7 +48,7 @@ func main() {
 	web.StartWebAdmin(db, tlsConfig)
 
 	if config.GetBool(config.FakeDns) {
-		dns.StartFakeDNS(config.GetString(config.FakeDnsAddress), "udp")
+		dns.StartFakeDNS(db, config.GetString(config.FakeDnsAddress), "udp")
 	}
 
 	// Wait for exit

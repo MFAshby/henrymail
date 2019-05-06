@@ -53,3 +53,13 @@ CREATE TABLE IF NOT EXISTS queue (
                                      retries integer default 0 not null,
                                      content blob not null
 );
+
+CREATE TABLE IF NOT EXISTS keys (
+    id integer primary key not null,
+    name text not null,
+    key blob not null
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_keys_name on keys (
+    name
+);

@@ -5,18 +5,20 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	"database/sql"
 	"encoding/base64"
-	"encoding/pem"
-	"errors"
+	"encoding/gob"
 	"henrymail/config"
-	"io/ioutil"
+	"henrymail/models"
 	"log"
-	"os"
-	"path"
 )
 
-func GetDkimRecordString() (string, error) {
-	pk := GetOrCreateDkim()
+const (
+	KeyName = "dkim"
+)
+
+func GetDkimRecordString(db *sql.DB) (string, error) {
+	pk := GetOrCreateDkim(db)
 	pkb, e := x509.MarshalPKIXPublicKey(&pk.PublicKey)
 	if e != nil {
 		return "", e
@@ -29,111 +31,45 @@ func GetDkimRecordString() (string, error) {
 	return "v=dkim1; k=rsa; p=" + buf.String(), nil
 }
 
-func GetOrCreateDkim() *rsa.PrivateKey {
-	var privKey *rsa.PrivateKey
-	var e error
+func GetOrCreateDkim(db *sql.DB) *rsa.PrivateKey {
+	// Try the database
+	gob.Register(rsa.PrivateKey{})
+	var pk *rsa.PrivateKey
+	dbKey, e := models.KeyByName(db, KeyName)
+	if e == nil {
+		e = gob.NewDecoder(bytes.NewReader(dbKey.Key)).Decode(&pk)
+	}
 
-	privKeyFileName := config.GetString(config.DkimPrivateKeyFile)
-	pubKeyFileName := config.GetString(config.DkimPublicKeyFile)
-	privKeyBytes, e1 := ioutil.ReadFile(privKeyFileName)
-	pubKeyBytes, e2 := ioutil.ReadFile(pubKeyFileName)
-
-	if os.IsNotExist(e1) && os.IsNotExist(e2) {
-		_ = os.MkdirAll(path.Dir(privKeyFileName), 0700)
-		_ = os.MkdirAll(path.Dir(pubKeyFileName), 0700)
-
-		privKey, e = rsa.GenerateKey(rand.Reader, config.GetInt(config.DkimKeyBits))
+	if e != nil {
+		// Something is screwy, generate a new key
+		log.Print(e)
+		log.Println("Generating a new DKIM key")
+		pk, e = rsa.GenerateKey(rand.Reader, config.GetInt(config.DkimKeyBits))
 		if e != nil {
-			log.Fatal(e)
-		}
-		e = ioutil.WriteFile(privKeyFileName,
-			ExportRsaPrivateKeyAsPem(privKey),
-			0700)
-		if e != nil {
+			// Can't generate a key, can't recover from this
 			log.Fatal(e)
 		}
 
-		pubKey, e := ExportRsaPublicKeyAsPem(&privKey.PublicKey)
-		if e != nil {
-			log.Fatal(e)
+		if dbKey == nil {
+			// Assign a new db object if required
+			dbKey = &models.Key{
+				Name: KeyName,
+			}
 		}
 
-		e = ioutil.WriteFile(pubKeyFileName, pubKey, 0700)
+		buffer := bytes.Buffer{}
+		e = gob.NewEncoder(&buffer).Encode(pk)
 		if e != nil {
+			// Can't encode the key, can't recover from this
 			log.Fatal(e)
 		}
-	} else if e1 != nil {
-		log.Fatal(e1)
-	} else if e2 != nil {
-		log.Fatal(e2)
-	} else {
-		privKey, e = ParseRsaPrivateKeyFromPem(privKeyBytes)
+		dbKey.Key = buffer.Bytes()
+
+		e = dbKey.Save(db)
 		if e != nil {
+			// Can't recover from this
 			log.Fatal(e)
 		}
-		publicKey, e := ParseRsaPublicKeyFromPem(pubKeyBytes)
-		if e != nil {
-			log.Fatal(e)
-		}
-		privKey.PublicKey = *publicKey
 	}
-	return privKey
-}
-
-func ExportRsaPrivateKeyAsPem(pk *rsa.PrivateKey) []byte {
-	pkb := x509.MarshalPKCS1PrivateKey(pk)
-	pkp := pem.EncodeToMemory(
-		&pem.Block{
-			Type:  "RSA PRIVATE KEY",
-			Bytes: pkb,
-		},
-	)
-	return pkp
-}
-
-func ParseRsaPrivateKeyFromPem(pkp []byte) (*rsa.PrivateKey, error) {
-	block, _ := pem.Decode(pkp)
-	if block == nil {
-		return nil, errors.New("failed to parse PEM block containing the key")
-	}
-
-	priv, err := x509.ParsePKCS1PrivateKey(block.Bytes)
-	if err != nil {
-		return nil, err
-	}
-
-	return priv, nil
-}
-
-func ExportRsaPublicKeyAsPem(pk *rsa.PublicKey) ([]byte, error) {
-	pkb, err := x509.MarshalPKIXPublicKey(pk)
-	if err != nil {
-		return nil, err
-	}
-	pkp := pem.EncodeToMemory(
-		&pem.Block{
-			Type:  "RSA PUBLIC KEY",
-			Bytes: pkb,
-		},
-	)
-	return pkp, nil
-}
-
-func ParseRsaPublicKeyFromPem(pkp []byte) (*rsa.PublicKey, error) {
-	block, _ := pem.Decode(pkp)
-	if block == nil {
-		return nil, errors.New("failed to parse PEM block containing the key")
-	}
-
-	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
-	if err != nil {
-		return nil, err
-	}
-
-	switch pub := pub.(type) {
-	case *rsa.PublicKey:
-		return pub, nil
-	default:
-		return nil, errors.New("key type is not RSA")
-	}
+	return pk
 }

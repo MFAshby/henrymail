@@ -1,6 +1,7 @@
 package dns
 
 import (
+	"database/sql"
 	"github.com/miekg/dns"
 	"henrymail/config"
 	"henrymail/dkim"
@@ -10,7 +11,7 @@ import (
 	"strings"
 )
 
-func StartFakeDNS(addr, proto string) {
+func StartFakeDNS(db *sql.DB, addr, proto string) {
 	s := &dns.Server{
 		Addr: addr,
 		Net:  proto,
@@ -35,7 +36,7 @@ func StartFakeDNS(addr, proto string) {
 			case dns.TypeTXT:
 				result := ""
 				if strings.Contains(q.Name, "mx._domainkey.") {
-					result, _ = dkim.GetDkimRecordString()
+					result, _ = dkim.GetDkimRecordString(db)
 				} else {
 					result = spf.GetSpfRecordString()
 				}
