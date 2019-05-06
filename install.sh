@@ -27,5 +27,10 @@ systemctl daemon-reload
 systemctl enable henrymail
 systemctl start henrymail
 
+# Download the uninstall script
+wget https://github.com/MFAshby/henrymail/raw/master/uninstall.sh
+chmod +x uninstall.sh
+
 # Grep the admin password out of the logs
+sleep 5
 journalctl -fu henrymail | grep -qe Generated
