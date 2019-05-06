@@ -17,4 +17,5 @@ deploy:
   skip_cleanup: true
   on:
     repo: MFAshby/henrymail
+    tags: true
   prerelease: true
