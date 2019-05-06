@@ -23,3 +23,6 @@ issues [in the project repository](https://github.com/MFAshby/henrymail/issues)
 , or [send me an email](mailto:martin@ashbysoft.com)
 
 [Installation and usage](doc/SETUP.md)
+
+Travis build:
+[![Build Status](https://travis-ci.com/MFAshby/henrymail.svg?branch=master)](https://travis-ci.com/MFAshby/henrymail)

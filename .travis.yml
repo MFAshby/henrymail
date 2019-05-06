@@ -1,7 +1,9 @@
 language: go
 before_install:
-  - go get github.com/aprice/embed/cmd/embed
-  - go get golang.org/x/tools/cmd/goimports
-  - go get github.com/xo/xo
+  - GO111MODULE=off go get github.com/aprice/embed/cmd/embed
+  - GO111MODULE=off go get golang.org/x/tools/cmd/goimports
+  - GO111MODULE=off go get github.com/xo/xo
 go:
   - 1.11.4
+env:
+  - GO111MODULE=on
