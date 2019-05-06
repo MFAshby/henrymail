@@ -1,5 +1,35 @@
 {{ define "content" }}
 <div>
+    <h3>TCP ports</h3>
+    <p>
+    {{ if eq "" .FailingPorts }}
+        All the required ports are open &#x2714;
+    {{ else }}
+        Some ports are not open &#x2717;
+        check your firewall for ports {{ .FailingPorts }}
+    {{ end }}
+    </p>
+    <h3>DNS records</h3>
+    <h4>MX</h4>
+    <p>
+        {{ if eq .MxRecordShouldBe .MxRecordIs }}
+        Your MX record is OK &#x2714;
+        {{ else }}
+        Your MX record is wrong &#x2717;<br/>
+        It should be:
+    <form class="pure-form pure-form-aligned">
+        <div class="pure-control-group">
+            <label for="mx-host">Host</label>
+            <input id="mx-host" class="copyable" readonly type="text" value="@"/>
+        </div>
+
+        <div class="pure-control-group">
+            <label for="mx-value">Value</label>
+            <input id="mx-value" class="copyable" readonly type="text" value="{{.MxRecordShouldBe}}"/>
+        </div>
+    </form>
+    {{ end }}
+    </p>
     <h4>DKIM</h4>
     <p>
         {{ if eq .DkimRecordShouldBe .DkimRecordIs }}
