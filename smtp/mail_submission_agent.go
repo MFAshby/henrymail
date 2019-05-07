@@ -3,7 +3,6 @@ package smtp
 import (
 	"bytes"
 	"crypto/tls"
-	"database/sql"
 	"github.com/emersion/go-message"
 	"github.com/emersion/go-smtp"
 	"henrymail/config"
@@ -18,9 +17,8 @@ import (
 /**
  * Accepts new mail from our own users for sending
  */
-func StartMsa(db *sql.DB, proc process.MsgProcessor, tls *tls.Config) {
+func StartMsa(proc process.MsgProcessor, tls *tls.Config) {
 	be := &smtpSubmissionBackend{
-		db:   db,
 		proc: proc,
 	}
 	s := smtp.NewServer(be)
@@ -41,12 +39,11 @@ func StartMsa(db *sql.DB, proc process.MsgProcessor, tls *tls.Config) {
 }
 
 type smtpSubmissionBackend struct {
-	db   *sql.DB
 	proc process.MsgProcessor
 }
 
 func (b *smtpSubmissionBackend) Login(username, password string) (smtp.User, error) {
-	user, e := logic.Login(b.db, username, password)
+	user, e := logic.Login(username, password)
 	if e != nil {
 		return nil, e
 	}

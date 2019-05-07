@@ -5,10 +5,10 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
-	"database/sql"
 	"encoding/base64"
 	"encoding/gob"
 	"henrymail/config"
+	"henrymail/database"
 	"henrymail/models"
 	"log"
 )
@@ -17,8 +17,8 @@ const (
 	KeyName = "dkim"
 )
 
-func GetDkimRecordString(db *sql.DB) (string, error) {
-	pk := GetOrCreateDkim(db)
+func GetDkimRecordString() (string, error) {
+	pk := GetOrCreateDkim()
 	pkb, e := x509.MarshalPKIXPublicKey(&pk.PublicKey)
 	if e != nil {
 		return "", e
@@ -31,11 +31,11 @@ func GetDkimRecordString(db *sql.DB) (string, error) {
 	return "v=dkim1; k=rsa; p=" + buf.String(), nil
 }
 
-func GetOrCreateDkim(db *sql.DB) *rsa.PrivateKey {
+func GetOrCreateDkim() *rsa.PrivateKey {
 	// Try the database
 	gob.Register(rsa.PrivateKey{})
 	var pk *rsa.PrivateKey
-	dbKey, e := models.KeyByName(db, KeyName)
+	dbKey, e := models.KeyByName(database.DB, KeyName)
 	if e == nil {
 		e = gob.NewDecoder(bytes.NewReader(dbKey.Key)).Decode(&pk)
 	}
@@ -65,7 +65,7 @@ func GetOrCreateDkim(db *sql.DB) *rsa.PrivateKey {
 		}
 		dbKey.Key = buffer.Bytes()
 
-		e = dbKey.Save(db)
+		e = dbKey.Save(database.DB)
 		if e != nil {
 			// Can't recover from this
 			log.Fatal(e)

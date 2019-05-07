@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"henrymail/config"
+	"henrymail/database"
 	"henrymail/logic"
 	"henrymail/models"
 	"log"
@@ -29,7 +30,7 @@ const (
 )
 
 func (w *wa) jwtSecret() []byte {
-	key, e := models.KeyByName(w.db, JwtSecretKeyName)
+	key, e := models.KeyByName(database.DB, JwtSecretKeyName)
 	if e != nil {
 		log.Print(e)
 		log.Println("Generating new jwtSecret")
@@ -46,7 +47,7 @@ func (w *wa) jwtSecret() []byte {
 			}
 		}
 		key.Key = newSecret
-		e = key.Save(w.db)
+		e = key.Save(database.DB)
 		if e != nil {
 			log.Fatal(e)
 		}
@@ -62,7 +63,7 @@ func (wa *wa) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	usr, err := logic.Login(wa.db, username, password)
+	usr, err := logic.Login(username, password)
 	if err != nil {
 		wa.loginView.render(w, err)
 		return

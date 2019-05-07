@@ -23,10 +23,8 @@ import (
 	"time"
 )
 
-func StartImap(db *sql.DB, tls *tls.Config) {
-	be := &imapBackend{
-		db: db,
-	}
+func StartImap(tls *tls.Config) {
+	be := &imapBackend{}
 	s := server.New(be)
 	s.Addr = config.GetString(config.ImapAddress)
 	s.Debug = os.Stdout
@@ -40,28 +38,24 @@ func StartImap(db *sql.DB, tls *tls.Config) {
 	}()
 }
 
-type imapBackend struct {
-	db *sql.DB
-}
+type imapBackend struct{}
 
 func (b *imapBackend) Login(username, password string) (backend.User, error) {
-	user, e := logic.Login(b.db, username, password)
+	user, e := logic.Login(username, password)
 	if e != nil {
 		return nil, e
 	}
 	return &imapUser{
 		userid: user.ID,
-		db:     b.db,
 	}, nil
 }
 
 type imapUser struct {
 	userid int
-	db     *sql.DB
 }
 
 func (u *imapUser) Username() string {
-	user, e := models.UserByID(u.db, u.userid)
+	user, e := models.UserByID(database.DB, u.userid)
 	if e != nil {
 		return "UNKNOWN"
 	}
@@ -69,7 +63,7 @@ func (u *imapUser) Username() string {
 }
 
 func (u *imapUser) ListMailboxes(subscribed bool) ([]backend.Mailbox, error) {
-	mbxs, err := models.MailboxesByUserid(u.db, u.userid)
+	mbxs, err := models.MailboxesByUserid(database.DB, u.userid)
 	if err != nil {
 		return nil, err
 	}
@@ -77,20 +71,18 @@ func (u *imapUser) ListMailboxes(subscribed bool) ([]backend.Mailbox, error) {
 	for ix, mbx := range mbxs {
 		mailboxes[ix] = &imapMailbox{
 			mailboxid: mbx.ID,
-			db:        u.db,
 		}
 	}
 	return mailboxes, nil
 }
 
 func (u *imapUser) GetMailbox(name string) (backend.Mailbox, error) {
-	mailbox, e := models.MailboxByUseridName(u.db, u.userid, name)
+	mailbox, e := models.MailboxByUseridName(database.DB, u.userid, name)
 	if e != nil {
 		return nil, e
 	}
 	return &imapMailbox{
 		mailboxid: mailbox.ID,
-		db:        u.db,
 		userid:    u.userid,
 	}, nil
 }
@@ -101,24 +93,24 @@ func (u *imapUser) CreateMailbox(name string) error {
 		Userid:     u.userid,
 		Subscribed: true,
 	}
-	return mailbox.Save(u.db)
+	return mailbox.Save(database.DB)
 }
 
 func (u *imapUser) DeleteMailbox(name string) error {
-	mailbox, e := models.MailboxByUseridName(u.db, u.userid, name)
+	mailbox, e := models.MailboxByUseridName(database.DB, u.userid, name)
 	if e != nil {
 		return e
 	}
-	return mailbox.Delete(u.db)
+	return mailbox.Delete(database.DB)
 }
 
 func (u *imapUser) RenameMailbox(existingName, newName string) error {
-	mailbox, e := models.MailboxByUseridName(u.db, u.userid, existingName)
+	mailbox, e := models.MailboxByUseridName(database.DB, u.userid, existingName)
 	if e != nil {
 		return e
 	}
 	mailbox.Name = newName
-	return mailbox.Save(u.db)
+	return mailbox.Save(database.DB)
 }
 
 func (*imapUser) Logout() error {
@@ -129,11 +121,10 @@ func (*imapUser) Logout() error {
 type imapMailbox struct {
 	userid    int
 	mailboxid int
-	db        *sql.DB
 }
 
 func (m *imapMailbox) Name() string {
-	mailbox, e := models.MailboxByID(m.db, m.mailboxid)
+	mailbox, e := models.MailboxByID(database.DB, m.mailboxid)
 	if e != nil {
 		return "UNKNOWN"
 	}
@@ -149,12 +140,12 @@ func (m *imapMailbox) Info() (*imap.MailboxInfo, error) {
 }
 
 func (m *imapMailbox) Status(items []imap.StatusItem) (*imap.MailboxStatus, error) {
-	mbx, err := models.MailboxByID(m.db, m.mailboxid)
+	mbx, err := models.MailboxByID(database.DB, m.mailboxid)
 	if err != nil {
 		return nil, err
 	}
 	//TODO make this more efficient
-	messages, err := models.MessagesByMailboxid(m.db, m.mailboxid)
+	messages, err := models.MessagesByMailboxid(database.DB, m.mailboxid)
 	if err != nil {
 		return nil, err
 	}
@@ -186,12 +177,12 @@ func (m *imapMailbox) Status(items []imap.StatusItem) (*imap.MailboxStatus, erro
 }
 
 func (m *imapMailbox) SetSubscribed(subscribed bool) error {
-	mailbox, e := models.MailboxByID(m.db, m.mailboxid)
+	mailbox, e := models.MailboxByID(database.DB, m.mailboxid)
 	if e != nil {
 		return e
 	}
 	mailbox.Subscribed = subscribed
-	return mailbox.Save(m.db)
+	return mailbox.Save(database.DB)
 }
 
 func (*imapMailbox) Check() error {
@@ -200,7 +191,7 @@ func (*imapMailbox) Check() error {
 
 func (m *imapMailbox) ListMessages(uid bool, seqset *imap.SeqSet, items []imap.FetchItem, ch chan<- *imap.Message) error {
 	defer close(ch)
-	messages, e := models.MessagesByMailboxid(m.db, m.mailboxid)
+	messages, e := models.MessagesByMailboxid(database.DB, m.mailboxid)
 	if e != nil {
 		return e
 	}
@@ -215,7 +206,7 @@ func (m *imapMailbox) ListMessages(uid bool, seqset *imap.SeqSet, items []imap.F
 }
 
 func (m *imapMailbox) SearchMessages(uid bool, criteria *imap.SearchCriteria) ([]uint32, error) {
-	msgs, e := models.MessagesByMailboxid(m.db, m.mailboxid)
+	msgs, e := models.MessagesByMailboxid(database.DB, m.mailboxid)
 	if e != nil {
 		return nil, e
 	}
@@ -238,7 +229,7 @@ func (m *imapMailbox) SearchMessages(uid bool, criteria *imap.SearchCriteria) ([
 }
 
 func (m *imapMailbox) CreateMessage(flags []string, ts time.Time, body imap.Literal) error {
-	return database.Transact(m.db, func(tx *sql.Tx) error {
+	return database.Transact(database.DB, func(tx *sql.Tx) error {
 		mailbox, e := models.MailboxByID(tx, m.mailboxid)
 		if e != nil {
 			return e
@@ -259,7 +250,7 @@ func (m *imapMailbox) CreateMessage(flags []string, ts time.Time, body imap.Lite
 }
 
 func (m *imapMailbox) UpdateMessagesFlags(uid bool, seqset *imap.SeqSet, operation imap.FlagsOp, flags []string) error {
-	return database.Transact(m.db, func(tx *sql.Tx) error {
+	return database.Transact(database.DB, func(tx *sql.Tx) error {
 		messages, e := models.MessagesByMailboxid(tx, m.mailboxid)
 		if e != nil {
 			return e
@@ -297,7 +288,7 @@ func (m *imapMailbox) UpdateMessagesFlags(uid bool, seqset *imap.SeqSet, operati
 }
 
 func (m *imapMailbox) CopyMessages(uid bool, seqset *imap.SeqSet, dest string) error {
-	return database.Transact(m.db, func(tx *sql.Tx) error {
+	return database.Transact(database.DB, func(tx *sql.Tx) error {
 		messages, e := models.MessagesByMailboxid(tx, m.mailboxid)
 		if e != nil {
 			return e
@@ -320,8 +311,8 @@ func (m *imapMailbox) CopyMessages(uid bool, seqset *imap.SeqSet, dest string) e
 }
 
 func (m *imapMailbox) Expunge() error {
-	return database.Transact(m.db, func(tx *sql.Tx) error {
-		messages, e := models.MessagesByMailboxid(m.db, m.mailboxid)
+	return database.Transact(database.DB, func(tx *sql.Tx) error {
+		messages, e := models.MessagesByMailboxid(database.DB, m.mailboxid)
 		if e != nil {
 			return e
 		}

@@ -14,12 +14,10 @@ import (
 /**
  * Saves which are intended for our own users into their inboxes.
  */
-type saver struct {
-	db *sql.DB
-}
+type saver struct{}
 
 func (s *saver) Process(wrap *ReceivedMsg) error {
-	return database.Transact(s.db, func(tx *sql.Tx) error {
+	return database.Transact(database.DB, func(tx *sql.Tx) error {
 		for _, to := range wrap.To {
 			username := strings.Split(to, "@")[0]
 			user, e := models.UserByUsername(tx, username)
@@ -45,6 +43,6 @@ func (s *saver) Process(wrap *ReceivedMsg) error {
 	})
 }
 
-func NewSaver(db *sql.DB) MsgProcessor {
-	return &saver{db: db}
+func NewSaver() MsgProcessor {
+	return &saver{}
 }

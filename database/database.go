@@ -3,15 +3,17 @@ package database
 import (
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
-	"henrymail/config"
 	"henrymail/embedded"
 	"log"
 )
 
 //go:generate ./generate_database.sh
 
-func OpenDatabase() *sql.DB {
-	db, err := sql.Open(config.GetString(config.DbDriverName), config.GetString(config.DbConnectionString))
+var DB *sql.DB
+
+func OpenDatabase() {
+	var err error
+	DB, err = sql.Open("sqlite3", "henrymail.db")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -19,11 +21,10 @@ func OpenDatabase() *sql.DB {
 	if err != nil {
 		log.Fatal(err)
 	}
-	_, err = db.Exec(string(initSqlBytes))
+	_, err = DB.Exec(string(initSqlBytes))
 	if err != nil {
 		log.Fatal(err)
 	}
-	return db
 }
 
 func Transact(db *sql.DB, txFunc func(*sql.Tx) error) (err error) {

@@ -2,7 +2,6 @@ package web
 
 import (
 	"crypto/tls"
-	"database/sql"
 	"github.com/gorilla/mux"
 	"henrymail/config"
 	"henrymail/embedded"
@@ -26,8 +25,6 @@ type layoutData struct {
 }
 
 type wa struct {
-	db *sql.DB
-
 	// All views are pre-loaded
 	loginView          *view
 	errorView          *view
@@ -82,9 +79,8 @@ func (wa *wa) layoutData(u *models.User) (*layoutData, error) {
 	}, nil
 }
 
-func StartWebAdmin(db *sql.DB, tlsC *tls.Config) {
+func StartWebAdmin(tlsC *tls.Config) {
 	webAdmin := wa{
-		db:                 db,
 		loginView:          newView("login.html", "/templates/login.html"),
 		changePasswordView: newView("index.html", "/templates/change_password.html"),
 		usersView:          newView("index.html", "/templates/users.html"),

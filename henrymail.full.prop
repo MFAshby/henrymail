@@ -9,161 +9,70 @@
 ; on the same machine or you are restricted to operating on certain ports) then
 ; read on to see if these settings can help you.
 
-; This is the domain for emails addresses that this server is responsible for
-; e.g. mary@example.com
 Domain = example.com
 
-; This is the DNS name of the email server. Note that it is different to the
-; domain, in case you want to host a website at the domain root.
 ServerName = mail.example.com
 
-; This is the address where the Message Submission Agent will listen.
-; The default value is the IANA recommended port, see http://www.iana.org/go/rfc6409
 MsaAddress      = :587
 
-; This is the address where the Message Transfer Agent will listen.
-; The default value is the IANA recommended port, see http://www.iana.org/go/rfc5321
 MtaAddress      = :25
 
-; This is the address where the IMAP server will listen
-; The default value is the IANA recommended port, see http://www.iana.org/go/rfc3501
 ImapAddress     = :143
 
-; This is the address where the web administration interface will listen.
-; The default value is the standard HTTPS port.
 WebAdminAddress = :443
 
-; Defines whether to use Transport Layer Security for the each server type
-; It is recommended that you leave this enabled for all server types.
-; It should only be disabled for convenience during application development.
 MtaUseTls      = true
 MsaUseTls      = true
 ImapUseTls     = true
 
-; Defines whether to use Transport Layer Security for the web administration
-; interface. It is recommended to leave this enabled, unless you are running
-; henrymail behind a reverse proxy like nginx, which terminates the TLS
-; connection for you.
 WebAdminUseTls = true
 
-; Which DNS server should be used for sending emails and performing DNS health
-; checks. Defaults to the OpenDNS Public DNS server: see https://use.opendns.com/
 DnsServer      = 208.67.222.222:53
 
-; It is desirable during development and testing to spoof DNS records, without
-; having to expose the development environment to the internet. These settings
-; enable an in-built DNS server to provide this facility. They should not
-; be used in production environments.
 FakeDns        = false
 FakeDnsAddress = 127.0.0.1:2053
 
-; Henrymail supports 3 modes for certificates: AutoCert, Given, and SelfSigned
-;  AutoCert will automatically obtain certificates from LetsEncrypt,
-;    see https://letsencrypt.org/. This is the most convenient setting if you
-;    are running a standalone henrymail server.
-;  Given will use an existing certificate on disk. This is advisable if you
-;    already have a certificate, and you share it with other applications (e.g.
-;    a web server)
-;  SelfSigned will generate a self-signed certificate (not advisable in production
-;    systems)
 CertificateMode = AutoCert
 
-; If CertificateMode is set to AutoCert, then this email address is used by
-; LetsEncrypt to send you warnings if your certificate will expire, or if there
-; is some other problem.
 AutoCertEmail    = admin@example.com
 
-; This is the directory in which henrymail will store automatically generated
-; certificates.
 AutoCertCacheDir = keys
 
-; If CertificateMode is set to Given, then this should be the path to the
-; public certificate. The certificate must be issued for the server
-; set in the ServerName setting.
 CertificateFile = /etc/letsencrypt/live/example.com/fullchain.pem
 
-; If CertificateMode is set to Given, then this should be the path to the
-; private key.
 KeyFile         = /etc/letsencrypt/live/example.com/privkey.pem
 
-; Which database driver should be used to connect to the database.
-; Currently only sqlite3 is supported.
-DbDriverName       = sqlite3
 
-; A string describing how to connect to the database. For sqlite3 databases,
-; this is just the filename.
-DbConnectionString = henrymail.db
-
-; Controls how long SMTP clients are allowed to be idle before the connection
-; is terminated.
 MaxIdleSeconds  = 300
 
-; Controls the maximum message size that the SMTP server(s) will accept
 MaxMessageBytes = 1024*1024
 
-; Controls the maximum number of recipients the the SMTP server(s) will accept
 MaxRecipients   = 50
 
-; Controls how frequently retries are attempted, if an email fails to send due
-; to server down time. The format is described here:
-; https://godoc.org/github.com/robfig/cron
 RetryCronSpec = * * * * *
 
-; How many retries are attempted before the server stops trying and sends a
-; failure notification instead.
 RetryCount = 3
 
-; When the server is first started, an administrator user is generated.
-; This setting controls the username
+
 AdminUsername = admin
 
-; When the server is first started, an administrator user is generated.
-; This setting controls the password. If the setting is left blank, a
-; random 8 character password is generated and logged to the console.
 AdminPassword =
 
-; The mailboxes which will be configured for each new account, by default.
-; NB Not sure you can have a string array type property in a java props file.
-; DefaultMailboxes = "INBOX", "Trash", "Sent", "Drafts"
 
-; This setting controls whether emails sent from henrymail are signed with
-; DKIM.
 DkimSign           = true
 
-; This setting controls is incoming emails DKIM signatures should be verified.
-; Dkim records that are present but incorrect will cause the email to be rejected.
 DkimVerify         = true
 
-; This setting controls if incoming emails MUST be signed with DKIM.
-; Enabling this setting can reduce spam, however it will also reject any
-; emails from poorly configured email domains.
 DkimMandatory      = false
 
-; The length of the DKIM signing key. 2048 is a safe default. 1024 is the minimum
-; recommended setting.
 DkimKeyBits        = 2048
 
-; This setting controls whether SPF records should be verified for incoming emails
-; SPF records that are present but incorrect will cause the email to be rejected.
 SpfVerify = true
 
-; This setting controls whether SPF records are mandatory for incoming emails.
-; Enabling this setting can reduce spam, however it will also reject any
-; emails from poorly configured email domains.
 SpfMandatory = false
 
-; This setting controls the name of the cookie that's stored in users' browsers for
-; authentication
 JwtCookieName        = henrymail_jwt_token
 
-; This setting controls what domain is used for the authentication cookie. This should
-; only be used during development, when the server name setting may differ from the
-; actual server name. Use in a production environment will cause the web admin interface
-; to stop working.
 CookieDomainOverride = "CookieDomainOverride"
 
-; This setting controls which port our server will connect to in order to pass on
-; submitted emails. This should only be changed for development purposes when you
-; wish to test emails looping back to your own server locally. Changing this in
-; production will cause all outgoing email to fail.
 MtaSendPort = :25

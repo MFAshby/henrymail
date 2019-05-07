@@ -55,11 +55,11 @@ CREATE TABLE IF NOT EXISTS queue (
 );
 
 CREATE TABLE IF NOT EXISTS keys (
-    id integer primary key not null,
-    name text not null,
+    name text primary key not null,
     key blob not null
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_keys_name on keys (
-    name
+CREATE TABLE IF NOT EXISTS config (
+    name text primary key not null,
+    value text not null
 );

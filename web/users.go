@@ -2,6 +2,7 @@ package web
 
 import (
 	"errors"
+	"henrymail/database"
 	"henrymail/logic"
 	"henrymail/models"
 	"net/http"
@@ -13,12 +14,12 @@ func (wa *wa) delete(w http.ResponseWriter, r *http.Request, u *models.User) {
 		wa.renderError(w, errors.New("You cannot delete yourself"))
 		return
 	}
-	user, err := models.UserByUsername(wa.db, username)
+	user, err := models.UserByUsername(database.DB, username)
 	if err != nil {
 		wa.renderError(w, err)
 		return
 	}
-	err = user.Delete(wa.db)
+	err = user.Delete(database.DB)
 	if err != nil {
 		wa.renderError(w, err)
 		return
@@ -31,7 +32,7 @@ func (wa *wa) add(w http.ResponseWriter, r *http.Request, u *models.User) {
 	username := r.FormValue("username")
 	password := r.FormValue("password")
 	isadmin := r.FormValue("admin") == "admin"
-	_, err := logic.NewUser(wa.db, username, password, isadmin)
+	_, err := logic.NewUser(database.DB, username, password, isadmin)
 	if err != nil {
 		wa.renderError(w, err)
 		return
@@ -46,7 +47,7 @@ func (wa *wa) users(w http.ResponseWriter, r *http.Request, u *models.User) {
 		wa.renderError(w, e)
 		return
 	}
-	users, e := models.GetAllUser(wa.db)
+	users, e := models.GetAllUser(database.DB)
 	if e != nil {
 		wa.renderError(w, e)
 		return

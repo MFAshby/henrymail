@@ -2,6 +2,7 @@ package config
 
 import (
 	"bytes"
+	"context"
 	"crypto/ecdsa"
 	"crypto/rand"
 	"crypto/rsa"
@@ -10,6 +11,8 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"golang.org/x/crypto/acme/autocert"
+	"henrymail/database"
+	"henrymail/models"
 	"log"
 	"math"
 	"math/big"
@@ -32,7 +35,7 @@ func GetTLSConfig() *tls.Config {
 	switch certMode {
 	case AutoCert:
 		m := &autocert.Manager{
-			Cache:      autocert.DirCache("keys"),
+			Cache:      &dbCache{},
 			Prompt:     autocert.AcceptTOS,
 			HostPolicy: autocert.HostWhitelist(GetString(ServerName)),
 			Email:      GetString(AutoCertEmail),
@@ -156,4 +159,37 @@ func GenerateCert(host string,
 		log.Fatalf("failed to write data to key.pem: %s", err)
 	}
 	return tls.X509KeyPair(certOut.Bytes(), keyOut.Bytes())
+}
+
+type dbCache struct{}
+
+func (dbCache) Get(ctx context.Context, key string) ([]byte, error) {
+	dbKey, e := models.KeyByName(database.DB, dbKeyName(key))
+	if e != nil {
+		return nil, e
+	}
+	return dbKey.Key, nil
+}
+
+func (dbCache) Put(ctx context.Context, key string, data []byte) error {
+	dbKey, e := models.KeyByName(database.DB, dbKeyName(key))
+	if e != nil {
+		dbKey = &models.Key{
+			Name: dbKeyName(key),
+		}
+	}
+	dbKey.Key = data
+	return dbKey.Save(database.DB)
+}
+
+func (dbCache) Delete(ctx context.Context, key string) error {
+	dbKey, e := models.KeyByName(database.DB, dbKeyName(key))
+	if e != nil {
+		return e
+	}
+	return dbKey.Delete(database.DB)
+}
+
+func dbKeyName(key string) string {
+	return "autocert-" + key
 }

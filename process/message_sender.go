@@ -225,9 +225,8 @@ func (s *sender) sendFailureNotification(originalMsgTo, originalMsgFrom string, 
 	})
 }
 
-func NewSender(db *sql.DB) *sender {
+func NewSender() *sender {
 	sender := &sender{
-		db: db,
 		cr: cron.New(),
 	}
 	err := sender.cr.AddFunc(config.GetString(config.RetryCronSpec), sender.doRetries)

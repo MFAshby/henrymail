@@ -12,8 +12,8 @@ import (
 /**
  * User administration functions
  */
-func Login(db *sql.DB, username, password string) (*models.User, error) {
-	user, e := models.UserByUsername(db, username)
+func Login(username, password string) (*models.User, error) {
+	user, e := models.UserByUsername(database.DB, username)
 	if e != nil {
 		return nil, e
 	}
@@ -59,8 +59,8 @@ func NewUser(db *sql.DB, username, password string, admin bool) (*models.User, e
 	return user, e
 }
 
-func ChangePassword(db *sql.DB, username, existingpassword, newpassword, newpassword2 string) error {
-	user, e := Login(db, username, existingpassword)
+func ChangePassword(username, existingpassword, newpassword, newpassword2 string) error {
+	user, e := Login(username, existingpassword)
 	if e != nil {
 		return e
 	}
@@ -75,5 +75,5 @@ func ChangePassword(db *sql.DB, username, existingpassword, newpassword, newpass
 		return e
 	}
 	user.Passwordbytes = passwordBytes
-	return user.Save(db)
+	return user.Save(database.DB)
 }

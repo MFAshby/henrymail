@@ -21,7 +21,7 @@ func (wa *wa) healthChecks(w http.ResponseWriter, r *http.Request, u *models.Use
 	spfExpected := spf.GetSpfRecordString()
 	spfActual := fetchSpfActual()
 
-	dkimExpected, e := dkim.GetDkimRecordString(wa.db)
+	dkimExpected, e := dkim.GetDkimRecordString()
 	if e != nil {
 		wa.renderError(w, e)
 		return

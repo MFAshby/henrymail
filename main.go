@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"henrymail/config"
 	"henrymail/database"
 	"henrymail/dkim"
@@ -19,20 +18,20 @@ import (
 //go:generate embed
 
 func main() {
+	database.OpenDatabase()
 	config.SetupConfig()
 	config.SetupResolver()
 
 	tlsConfig := config.GetTLSConfig()
-	db := database.OpenDatabase()
 
 	// submission agent processing chain
-	var msaChain process.MsgProcessor = process.NewSender(db)
+	var msaChain process.MsgProcessor = process.NewSender()
 	if config.GetBool(config.DkimSign) {
-		msaChain = process.NewDkimSigner(dkim.GetOrCreateDkim(db), msaChain)
+		msaChain = process.NewDkimSigner(dkim.GetOrCreateDkim(), msaChain)
 	}
 
 	// transfer agent processing chain
-	mtaChain := process.NewSaver(db)
+	mtaChain := process.NewSaver()
 	if config.GetBool(config.DkimVerify) {
 		mtaChain = process.NewDkimVerifier(mtaChain)
 	}
@@ -40,29 +39,29 @@ func main() {
 	// SPF checker
 	// Virus scanner
 	// Spam filter
-	seedData(db)
+	seedData()
 
-	smtp.StartMsa(db, msaChain, tlsConfig)
-	smtp.StartMta(db, mtaChain, tlsConfig)
-	imap.StartImap(db, tlsConfig)
-	web.StartWebAdmin(db, tlsConfig)
+	smtp.StartMsa(msaChain, tlsConfig)
+	smtp.StartMta(mtaChain, tlsConfig)
+	imap.StartImap(tlsConfig)
+	web.StartWebAdmin(tlsConfig)
 
 	if config.GetBool(config.FakeDns) {
-		dns.StartFakeDNS(db, config.GetString(config.FakeDnsAddress), "udp")
+		dns.StartFakeDNS(config.GetString(config.FakeDnsAddress), "udp")
 	}
 
 	// Wait for exit
 	select {}
 }
 
-func seedData(db *sql.DB) {
+func seedData() {
 	var pw string
 	if config.GetString(config.AdminPassword) == "" {
 		pw = randSeq(8)
 	} else {
 		pw = config.GetString(config.AdminPassword)
 	}
-	user, err := logic.NewUser(db, config.GetString(config.AdminUsername), pw, true)
+	user, err := logic.NewUser(database.DB, config.GetString(config.AdminUsername), pw, true)
 	if err == nil {
 		log.Printf("Generated admin user: %v password %v", user.Username, pw)
 	}

@@ -3,7 +3,6 @@ package smtp
 import (
 	"bytes"
 	"crypto/tls"
-	"database/sql"
 	"github.com/emersion/go-message"
 	"github.com/emersion/go-smtp"
 	"henrymail/config"
@@ -17,9 +16,8 @@ import (
 /**
  * Accepts new mail from other servers
  */
-func StartMta(db *sql.DB, proc process.MsgProcessor, tls *tls.Config) {
+func StartMta(proc process.MsgProcessor, tls *tls.Config) {
 	b := &smtpTransferBackend{
-		db:   db,
 		proc: proc,
 	}
 	s := smtp.NewServer(b)
@@ -41,7 +39,6 @@ func StartMta(db *sql.DB, proc process.MsgProcessor, tls *tls.Config) {
 }
 
 type smtpTransferBackend struct {
-	db   *sql.DB
 	proc process.MsgProcessor
 }
 
