@@ -17,4 +17,3 @@ deploy:
   on:
     repo: MFAshby/henrymail
     tags: true
-  prerelease: true
