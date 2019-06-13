@@ -2,6 +2,7 @@
 henrymail
 henrymail.db
 henrymail.prop
+__debug_bin
 
 # IDE stuff
 .idea/
