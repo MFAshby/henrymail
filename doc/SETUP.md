@@ -129,6 +129,17 @@ web server on the same server.
 The complete list of configuration options is documented in 
 [henrymail.full.prop](../henrymail.full.prop)
 
+Upgrade
+=======
+You can download & run the upgrade script with the following command, similar to 
+the install script.
+
+```bash
+wget https://raw.githubusercontent.com/MFAshby/henrymail/master/upgrade.sh \
+ && chmod +x upgrade.sh \
+ && sudo ./upgrade.sh
+```
+
 TODO
 ====
 * Administration page guide to adding users.
