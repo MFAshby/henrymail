@@ -5,7 +5,7 @@ echo "Enter the domain that you want to serve email for (e.g. mfashby.net)"
 read DOMAIN
 
 # Download the binary, make it executable and allow binding low ports
-wget -O /usr/local/bin/henrymail https://github.com/MFAshby/henrymail/releases/download/0.0.1/henrymail
+wget -O /usr/local/bin/henrymail https://github.com/MFAshby/henrymail/releases/latest/download/henrymail
 chmod +x /usr/local/bin/henrymail
 setcap 'cap_net_bind_service=+ep' /usr/local/bin/henrymail
 
