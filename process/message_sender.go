@@ -101,6 +101,10 @@ func (s *sender) sendToHost(to, from, host string, content []byte) error {
 	if err != nil {
 		return err
 	}
+	err = writeCloser.Close()
+	if err != nil {
+		return err
+	}
 	return client.Quit()
 }
 
