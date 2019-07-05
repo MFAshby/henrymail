@@ -15,7 +15,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.10.0
 	github.com/miekg/dns v1.1.3
 	github.com/pkg/errors v0.8.0
-	github.com/robfig/cron v0.0.0-20180505203441-b41be1df6967
+	github.com/robfig/cron v1.2.0 // indirect
 	github.com/spf13/viper v1.3.1
 	github.com/xo/xo v0.0.0-20190105221319-1a94fa516029
 	github.com/xo/xoutil v0.0.0-20171112033149-46189f4026a5

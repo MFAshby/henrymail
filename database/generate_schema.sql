@@ -44,16 +44,6 @@ CREATE INDEX IF NOT EXISTS idx_messages_mailboxid ON messages (
                                                               mailboxid
 );
 
-
-CREATE TABLE IF NOT EXISTS queue (
-                                     id integer primary key not null,
-                                     msgfrom text not null,
-                                     msgto text not null,
-                                     ts timestamp not null,
-                                     retries integer default 0 not null,
-                                     content blob not null
-);
-
 CREATE TABLE IF NOT EXISTS keys (
     id integer primary key not null,
     name text not null,

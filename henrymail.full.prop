@@ -104,15 +104,6 @@ MaxMessageBytes = 1024*1024
 ; Controls the maximum number of recipients the the SMTP server(s) will accept
 MaxRecipients   = 50
 
-; Controls how frequently retries are attempted, if an email fails to send due
-; to server down time. The format is described here:
-; https://godoc.org/github.com/robfig/cron
-RetryCronSpec = * * * * *
-
-; How many retries are attempted before the server stops trying and sends a
-; failure notification instead.
-RetryCount = 3
-
 ; When the server is first started, an administrator user is generated.
 ; This setting controls the username
 AdminUsername = admin

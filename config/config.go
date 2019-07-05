@@ -56,8 +56,6 @@ const (
 	MaxIdleSeconds  = "MaxIdleSeconds"
 	MaxMessageBytes = "MaxMessageBytes"
 	MaxRecipients   = "MaxRecipients"
-	RetryCronSpec   = "RetryCronSpec"
-	RetryCount      = "RetryCount"
 
 	// Admin stuff
 	AdminUsername    = "AdminUsername"
@@ -109,8 +107,6 @@ func SetupConfig() {
 	viper.SetDefault(MaxIdleSeconds, 300)
 	viper.SetDefault(MaxMessageBytes, 1024*1024) // 1MB
 	viper.SetDefault(MaxRecipients, 50)
-	viper.SetDefault(RetryCronSpec, "* * * * *") // every minute
-	viper.SetDefault(RetryCount, 3)
 
 	viper.SetDefault(AdminUsername, "admin")
 	viper.SetDefault(AdminPassword, "") // Empty means it will be generated
