@@ -26,7 +26,8 @@ func StartMsa(db *sql.DB, proc process.MsgProcessor, tls *tls.Config) {
 	s := smtp.NewServer(be)
 	s.Addr = config.GetString(config.MsaAddress)
 	s.Domain = config.GetString(config.ServerName)
-	s.MaxIdleSeconds = config.GetInt(config.MaxIdleSeconds)
+	//TODO come back to this
+	// s.ReadTimeout = time.Duration config.GetInt(config.MaxIdleSeconds)
 	s.MaxMessageBytes = config.GetInt(config.MaxMessageBytes)
 	s.MaxRecipients = config.GetInt(config.MaxRecipients)
 	s.AllowInsecureAuth = !config.GetBool(config.MsaUseTls)
@@ -45,27 +46,44 @@ type smtpSubmissionBackend struct {
 	proc process.MsgProcessor
 }
 
-func (b *smtpSubmissionBackend) Login(username, password string) (smtp.User, error) {
+func (b *smtpSubmissionBackend) Login(state *smtp.ConnectionState, username, password string) (smtp.Session, error) {
 	user, e := logic.Login(b.db, username, password)
 	if e != nil {
 		return nil, e
 	}
-	return &smtpUser{
+	return &smtpSubmissionSession{
 		proc:   b.proc,
 		userid: user.ID,
 	}, nil
 }
 
-func (b *smtpSubmissionBackend) AnonymousLogin() (smtp.User, error) {
+func (b *smtpSubmissionBackend) AnonymousLogin(state *smtp.ConnectionState) (smtp.Session, error) {
 	return nil, smtp.ErrAuthRequired
 }
 
-type smtpUser struct {
+type smtpSubmissionSession struct {
 	proc   process.MsgProcessor
 	userid int
+	currentFrom string
+	currentTo []string
 }
 
-func (u *smtpUser) Send(from string, to []string, r io.Reader) error {
+func (u *smtpSubmissionSession) Reset() {
+	u.currentFrom = ""
+	u.currentTo = make([]string, 0)
+}
+
+func (u *smtpSubmissionSession) Mail(from string) error {
+	u.currentFrom = from
+	return nil
+}
+
+func (u *smtpSubmissionSession) Rcpt(to string) error {
+	u.currentTo = append(u.currentTo, to)
+	return nil
+}
+
+func (u *smtpSubmissionSession) Data(r io.Reader) error {
 	content, e := ioutil.ReadAll(r)
 	// Check we can read all the content
 	if e != nil {
@@ -79,12 +97,12 @@ func (u *smtpUser) Send(from string, to []string, r io.Reader) error {
 
 	// Pass it on
 	return u.proc.Process(&process.ReceivedMsg{
-		From:    from,
-		To:      to,
+		From:    u.currentFrom,
+		To:      u.currentTo,
 		Content: content,
 	})
 }
 
-func (*smtpUser) Logout() error {
+func (*smtpSubmissionSession) Logout() error {
 	return nil
 }

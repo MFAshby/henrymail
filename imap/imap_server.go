@@ -44,7 +44,7 @@ type imapBackend struct {
 	db *sql.DB
 }
 
-func (b *imapBackend) Login(username, password string) (backend.User, error) {
+func (b *imapBackend) Login(connInfo *imap.ConnInfo, username, password string) (backend.User, error) {
 	user, e := logic.Login(b.db, username, password)
 	if e != nil {
 		return nil, e
@@ -389,21 +389,11 @@ func match(m *models.Message, seqNum uint32, c *imap.SearchCriteria) (bool, erro
 	if e != nil {
 		return false, e
 	}
-	if !backendutil.MatchSeqNumAndUid(seqNum, uint32(m.UID), c) {
-		return false, nil
-	}
-	if !backendutil.MatchDate(m.Ts.Time, c) {
-		return false, nil
-	}
-	if !backendutil.MatchFlags(msgflags, c) {
-		return false, nil
-	}
-
 	ent, e := entity(m)
 	if e != nil {
 		return false, e
 	}
-	return backendutil.Match(ent, c)
+	return backendutil.Match(ent, seqNum, uint32(m.UID), m.Ts.Time, msgflags, c)
 }
 
 func fetch(m *models.Message, seqNum uint32, items []imap.FetchItem) (*imap.Message, error) {
@@ -415,13 +405,13 @@ func fetch(m *models.Message, seqNum uint32, items []imap.FetchItem) (*imap.Mess
 			if e != nil {
 				return nil, e
 			}
-			fetched.Envelope, _ = backendutil.FetchEnvelope(ent.Header)
+			fetched.Envelope, _ = backendutil.FetchEnvelope(ent.Header.Header)
 		case imap.FetchBody, imap.FetchBodyStructure:
 			ent, e := message.Read(bytes.NewReader(m.Content))
 			if e != nil {
 				return nil, e
 			}
-			fetched.BodyStructure, _ = backendutil.FetchBodyStructure(ent, item == imap.FetchBodyStructure)
+			fetched.BodyStructure, _ = backendutil.FetchBodyStructure(ent.Header.Header, ent.Body, item == imap.FetchBodyStructure)
 		case imap.FetchFlags:
 			flags, e := getFlags(m)
 			if e != nil {
@@ -442,7 +432,7 @@ func fetch(m *models.Message, seqNum uint32, items []imap.FetchItem) (*imap.Mess
 			}
 
 			e, _ := message.Read(bytes.NewReader(m.Content))
-			l, _ := backendutil.FetchBodySection(e, section)
+			l, _ := backendutil.FetchBodySection(e.Header.Header, e.Body, section)
 			fetched.Body[section] = l
 		}
 	}

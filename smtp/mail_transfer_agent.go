@@ -25,7 +25,7 @@ func StartMta(db *sql.DB, proc process.MsgProcessor, tls *tls.Config) {
 	s := smtp.NewServer(b)
 	s.Addr = config.GetString(config.MtaAddress)
 	s.Domain = config.GetString(config.ServerName)
-	s.MaxIdleSeconds = config.GetInt(config.MaxIdleSeconds)
+	// s.MaxIdleSeconds = config.GetInt(config.MaxIdleSeconds)
 	s.MaxMessageBytes = config.GetInt(config.MaxMessageBytes)
 	s.MaxRecipients = config.GetInt(config.MaxRecipients)
 	s.AuthDisabled = true
@@ -45,19 +45,32 @@ type smtpTransferBackend struct {
 	proc process.MsgProcessor
 }
 
-func (b *smtpTransferBackend) Login(username, password string) (smtp.User, error) {
+func (b *smtpTransferBackend) Login(state *smtp.ConnectionState, username, password string) (smtp.Session, error) {
 	return nil, smtp.ErrAuthUnsupported
 }
 
-func (b *smtpTransferBackend) AnonymousLogin() (smtp.User, error) {
-	return &smtpTransferUser{proc: b.proc}, nil
+func (b *smtpTransferBackend) AnonymousLogin(state *smtp.ConnectionState) (smtp.Session, error) {
+	return &smtpSession{proc: b.proc}, nil
 }
 
-type smtpTransferUser struct {
+type smtpSession struct {
 	proc process.MsgProcessor
+
+	currentFrom string
+	currentTo []string
 }
 
-func (u *smtpTransferUser) Send(from string, to []string, r io.Reader) error {
+func (s *smtpSession) Mail(from string) error {
+	s.currentFrom = from
+	return nil
+}
+
+func (s *smtpSession) Rcpt(to string) error {
+	s.currentTo = append(s.currentTo, to)
+	return nil
+}
+
+func (s *smtpSession) Data(r io.Reader) error {
 	content, e := ioutil.ReadAll(r)
 	// Check we can read all the content
 	if e != nil {
@@ -70,13 +83,18 @@ func (u *smtpTransferUser) Send(from string, to []string, r io.Reader) error {
 	}
 
 	// Pass it on
-	return u.proc.Process(&process.ReceivedMsg{
-		From:    from,
-		To:      to,
+	return s.proc.Process(&process.ReceivedMsg{
+		From:    s.currentFrom,
+		To:      s.currentTo,
 		Content: content,
 	})
 }
 
-func (*smtpTransferUser) Logout() error {
+func (s *smtpSession) Reset() {
+	s.currentFrom = ""
+	s.currentTo = make([]string, 0)
+}
+
+func (*smtpSession) Logout() error {
 	return nil
 }
