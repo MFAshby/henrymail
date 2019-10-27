@@ -2,6 +2,7 @@ package dns
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/miekg/dns"
 	"henrymail/config"
 	"henrymail/dkim"
@@ -44,7 +45,28 @@ func StartFakeDNS(db *sql.DB, addr, proto string) {
 					Hdr: dns.RR_Header{Name: q.Name, Rrtype: q.Qtype, Class: dns.ClassINET, Ttl: 0},
 					Txt: chunk(result, 255),
 				})
+			case dns.TypeSRV:
+				target := ""
+				port := uint16(0)
+				if strings.Contains(q.Name, "_imap._tcp") {
+					target = config.GetString(config.ServerName) + "."
+					_, _ = fmt.Sscanf(config.GetString(config.ImapAddress), ":%d", &port)
+				} else if strings.Contains(q.Name, "_submission._tcp") {
+					target = config.GetString(config.ServerName) + "."
+					_, _ = fmt.Sscanf(config.GetString(config.MsaAddress), ":%d", &port)
+				}
+
+				if target != "" {
+					m.Answer = append(m.Answer, &dns.SRV{
+						Hdr:      dns.RR_Header{Name: q.Name, Rrtype: q.Qtype, Class: dns.ClassINET, Ttl: 0},
+						Target:   target,
+						Port:     port,
+						Priority: uint16(10),
+						Weight:   uint16(5),
+					})
+				}
 			}
+
 		}
 
 		//log.Printf("Reply %v", m)
