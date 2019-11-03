@@ -28,26 +28,48 @@ func (wa *wa) healthChecks(w http.ResponseWriter, r *http.Request, u *models.Use
 	}
 	dkimActual := fetchDkimActual()
 	mxActual := fetchMxActual()
-	mxExpected := config.GetString(config.ServerName) + "." // MX records expect a trailing dot
+	mxExpected := config.GetString(config.ServerName) + "."
+
+	imapSrvTargetExpected, imapSrvPortExpected := config.GetString(config.ServerName)+".", config.GetString(config.ImapAddress)
+	imapSrvTargetActual, imapSrvPortActualInteger := fetchSrvTargetAndPort("imap", "tcp")
+	imapSrvPortActual := fmt.Sprintf(":%d", imapSrvPortActualInteger)
+	imapSrvCorrect := imapSrvTargetExpected == imapSrvTargetActual && imapSrvPortExpected == imapSrvPortActual
+
+	submissionSrvTargetExpected, submissionSrvPortExpected := config.GetString(config.ServerName)+".", config.GetString(config.MsaAddress)
+	submissionSrvTargetActual, submissionSrvPortActualInteger := fetchSrvTargetAndPort("submission", "tcp")
+	submissionSrvPortActual := fmt.Sprintf(":%d", submissionSrvPortActualInteger)
+	submissionSrvCorrect := submissionSrvTargetExpected == submissionSrvTargetActual && submissionSrvPortExpected == submissionSrvPortActual
 
 	data := struct {
 		layoutData
-		DkimRecordIs       string
-		DkimRecordShouldBe string
-		SpfRecordIs        string
-		SpfRecordShouldBe  string
-		MxRecordIs         string
-		MxRecordShouldBe   string
-		FailingPorts       string
+		DkimRecordIs                string
+		DkimRecordShouldBe          string
+		SpfRecordIs                 string
+		SpfRecordShouldBe           string
+		MxRecordIs                  string
+		MxRecordShouldBe            string
+		ImapSrvCorrect              bool
+		ImapSrvTargetShouldBe       string
+		ImapSrvPortShouldBe         string
+		SubmissionSrvCorrect        bool
+		SubmissionSrvTargetShouldBe string
+		SubmissionSrvPortShouldBe   string
+		FailingPorts                string
 	}{
-		layoutData:         *ld,
-		DkimRecordIs:       dkimActual,
-		DkimRecordShouldBe: dkimExpected,
-		SpfRecordIs:        spfActual,
-		SpfRecordShouldBe:  spfExpected,
-		MxRecordIs:         mxActual,
-		MxRecordShouldBe:   mxExpected,
-		FailingPorts:       fetchFailingPorts(),
+		layoutData:                  *ld,
+		DkimRecordIs:                dkimActual,
+		DkimRecordShouldBe:          dkimExpected,
+		SpfRecordIs:                 spfActual,
+		SpfRecordShouldBe:           spfExpected,
+		MxRecordIs:                  mxActual,
+		MxRecordShouldBe:            mxExpected,
+		ImapSrvCorrect:              imapSrvCorrect,
+		ImapSrvTargetShouldBe:       imapSrvTargetExpected,
+		ImapSrvPortShouldBe:         imapSrvPortExpected,
+		SubmissionSrvCorrect:        submissionSrvCorrect,
+		SubmissionSrvTargetShouldBe: submissionSrvTargetExpected,
+		SubmissionSrvPortShouldBe:   submissionSrvPortExpected,
+		FailingPorts:                fetchFailingPorts(),
 	}
 	wa.healthChecksView.render(w, data)
 }
@@ -95,6 +117,25 @@ func fetchMxActual() string {
 		}
 	}
 	return mxActual
+}
+
+func fetchSrvTargetAndPort(service, proto string) (string, int) {
+	cname, addrs, err := net.LookupSRV(service, proto, config.GetString(config.Domain))
+	srvActual := ""
+	srvPort := 0
+	if err != nil {
+		srvActual = err.Error()
+	} else {
+		srvLen := len(addrs)
+		if srvLen != 1 {
+			srvActual = fmt.Sprintf("Expecting exactly 1 srv record, found %d", srvLen)
+		} else {
+			srvActual = addrs[0].Target
+			srvPort = int(addrs[0].Port)
+		}
+	}
+	print(cname)
+	return srvActual, srvPort
 }
 
 func fetchFailingPorts() string {

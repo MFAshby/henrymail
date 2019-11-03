@@ -17,18 +17,18 @@
         {{ else }}
         Your MX record is wrong &#x2717;<br/>
         It should be:
-    <form class="pure-form pure-form-aligned">
-        <div class="pure-control-group">
-            <label for="mx-host">Host</label>
-            <input id="mx-host" class="copyable" readonly type="text" value="@"/>
-        </div>
+        <form class="pure-form pure-form-aligned">
+            <div class="pure-control-group">
+                <label for="mx-host">Host</label>
+                <input id="mx-host" class="copyable" readonly type="text" value="@"/>
+            </div>
 
-        <div class="pure-control-group">
-            <label for="mx-value">Value</label>
-            <input id="mx-value" class="copyable" readonly type="text" value="{{.MxRecordShouldBe}}"/>
-        </div>
-    </form>
-    {{ end }}
+            <div class="pure-control-group">
+                <label for="mx-value">Value</label>
+                <input id="mx-value" class="copyable" readonly type="text" value="{{.MxRecordShouldBe}}"/>
+            </div>
+        </form>
+        {{ end }}
     </p>
     <h4>DKIM</h4>
     <p>
@@ -65,6 +65,55 @@
             <div class="pure-control-group">
             <label for="spf-value">Value</label>
             <input id="spf-value" class="copyable" readonly type="text" value="{{.SpfRecordShouldBe}}"/>
+            </div>
+        </form>
+        {{ end }}
+    </p>
+    <h4>SRV</h4>
+    <p>
+        {{ if .ImapSrvCorrect }}
+        Your IMAP SRV record is OK &#x2714;
+        {{ else }}
+        Your IMAP SRV record is wrong &#x2717;<br/>
+        It should be:
+        <form class="pure-form pure-form-aligned">
+            <div class="pure-control-group">
+                <label for="imap-srv-host">Host</label>
+                <input id="imap-srv-host" class="copyable" readonly type="text" value="_imap._tcp"/>
+            </div>
+
+            <div class="pure-control-group">
+                <label for="imap-srv-target">Value</label>
+                <input id="imap-srv-target" class="copyable" readonly type="text" value="{{.ImapSrvTargetShouldBe}}"/>
+            </div>
+
+            <div class="pure-control-group">
+                <label for="imap-srv-port">Port</label>
+                <input id="imap-srv-port" class="copyable" readonly type="number" value="{{.ImapSrvPortShouldBe}}"/>
+            </div>
+        </form>
+        {{ end }}
+    </p>
+    <p>
+        {{ if .SubmissionSrvCorrect }}
+        Your submission SRV record is OK &#x2714;
+        {{ else }}
+        Your submission SRV record is wrong &#x2717;<br/>
+        It should be:
+        <form class="pure-form pure-form-aligned">
+            <div class="pure-control-group">
+                <label for="submission-srv-host">Host</label>
+                <input id="submission-srv-host" class="copyable" readonly type="text" value="_submission._tcp"/>
+            </div>
+
+            <div class="pure-control-group">
+                <label for="submission-srv-target">Value</label>
+                <input id="submission-srv-target" class="copyable" readonly type="text" value="{{.SubmissionSrvTargetShouldBe}}"/>
+            </div>
+
+            <div class="pure-control-group">
+                <label for="imap-srv-port">Port</label>
+                <input id="imap-srv-port" class="copyable" readonly type="number" value="{{.ImapSrvPortShouldBe}}"/>
             </div>
         </form>
         {{ end }}
