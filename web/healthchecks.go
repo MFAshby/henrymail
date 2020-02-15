@@ -140,12 +140,22 @@ func fetchSrvTargetAndPort(service, proto string) (string, int) {
 
 func fetchFailingPorts() string {
 	// Should be able to open a socket on these ports, to ourselves
+
 	portsTest := []string{
 		"25",
 		"143",
 		"443",
 		"587",
 	}
+
+	if config.GetBool(config.ImapUseTls) {
+		portsTest = append(portsTest, "993")
+	}
+
+	if config.GetBool(config.MsaUseTls) {
+		portsTest = append(portsTest, "465")
+	}
+
 	var failedPorts []string
 	for _, port := range portsTest {
 		con, e := net.Dial("tcp", config.GetString(config.ServerName)+":"+port)
