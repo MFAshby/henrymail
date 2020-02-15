@@ -27,6 +27,10 @@ systemctl daemon-reload
 systemctl enable henrymail
 systemctl start henrymail
 
+# Download the upgrade script
+wget https://github.com/MFAshby/henrymail/raw/master/upgrade.sh
+chmod +x upgrade.sh
+
 # Download the uninstall script
 wget https://github.com/MFAshby/henrymail/raw/master/uninstall.sh
 chmod +x uninstall.sh
