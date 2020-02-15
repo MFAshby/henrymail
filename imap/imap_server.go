@@ -38,6 +38,20 @@ func StartImap(db *sql.DB, tls *tls.Config) {
 			log.Fatal(err)
 		}
 	}()
+
+	// Also start one on the
+	if config.GetBool(config.ImapUseTls) {
+		s := server.New(be)
+		s.Addr = config.GetString(config.ImapImplicitTLSAddress)
+		s.Debug = os.Stdout
+		s.TLSConfig = tls
+		go func() {
+			log.Println("Starting IMAP server with implicit TLS at ", s.Addr)
+			if err := s.ListenAndServeTLS(); err != nil {
+				log.Fatal(err)
+			}
+		}()
+	}
 }
 
 type imapBackend struct {

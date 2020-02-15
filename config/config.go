@@ -24,10 +24,12 @@ const (
 	ServerName = "ServerName"
 
 	// Ports / addresses to listen on for various services
-	MsaAddress      = "MsaAddress"
-	MtaAddress      = "MtaAddress"
-	ImapAddress     = "ImapAddress"
-	WebAdminAddress = "WebAdminAddress"
+	MsaAddress             = "MsaAddress"
+	MsaImplicitTLSAddress  = "MsaImplicitTLSAddress"
+	MtaAddress             = "MtaAddress"
+	ImapAddress            = "ImapAddress"
+	ImapImplicitTLSAddress = "ImapImplicitTLSAddress"
+	WebAdminAddress        = "WebAdminAddress"
 
 	// DNS
 	DnsServer      = "DnsServer"
@@ -85,8 +87,10 @@ func SetupConfig() {
 	viper.SetDefault(ServerName, "mail.example.com")
 
 	viper.SetDefault(MsaAddress, ":587")
+	viper.SetDefault(MsaImplicitTLSAddress, ":465")
 	viper.SetDefault(MtaAddress, ":25")
 	viper.SetDefault(ImapAddress, ":143")
+	viper.SetDefault(ImapImplicitTLSAddress, ":993")
 	viper.SetDefault(WebAdminAddress, ":443")
 	viper.SetDefault(WebAdminUseTls, true)
 

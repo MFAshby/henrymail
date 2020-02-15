@@ -39,6 +39,26 @@ func StartMsa(db *sql.DB, proc process.MsgProcessor, tls *tls.Config) {
 			log.Fatal(err)
 		}
 	}()
+
+	// Also start one on the implicit TLS port if we're using TLS
+	if config.GetBool(config.MsaUseTls) {
+		s := smtp.NewServer(be)
+		s.Addr = config.GetString(config.MsaImplicitTLSAddress)
+		s.Domain = config.GetString(config.ServerName)
+		//TODO come back to this
+		// s.ReadTimeout = time.Duration config.GetInt(config.MaxIdleSeconds)
+		s.MaxMessageBytes = config.GetInt(config.MaxMessageBytes)
+		s.MaxRecipients = config.GetInt(config.MaxRecipients)
+		s.AllowInsecureAuth = !config.GetBool(config.MsaUseTls)
+		s.Debug = os.Stdout
+		s.TLSConfig = tls
+		go func() {
+			log.Println("Starting mail submission agent with implicit TLS at ", s.Addr)
+			if err := s.ListenAndServeTLS(); err != nil {
+				log.Fatal(err)
+			}
+		}()
+	}
 }
 
 type smtpSubmissionBackend struct {
