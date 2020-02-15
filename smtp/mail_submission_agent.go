@@ -73,7 +73,7 @@ func (u *smtpSubmissionSession) Reset() {
 	u.currentTo = make([]string, 0)
 }
 
-func (u *smtpSubmissionSession) Mail(from string) error {
+func (u *smtpSubmissionSession) Mail(from string, options smtp.MailOptions) error {
 	u.currentFrom = from
 	return nil
 }

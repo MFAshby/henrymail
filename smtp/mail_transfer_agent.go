@@ -60,7 +60,7 @@ type smtpSession struct {
 	currentTo []string
 }
 
-func (s *smtpSession) Mail(from string) error {
+func (s *smtpSession) Mail(from string, options smtp.MailOptions) error {
 	s.currentFrom = from
 	return nil
 }
