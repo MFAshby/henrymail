@@ -1,3 +1,8 @@
+Archived!
+=========
+See [maddy.email](https://maddy.email) for a far more 
+complete solution, which is actively developed.
+
 Henrymail
 =========
 This software is intended to be an all-in-one email 
